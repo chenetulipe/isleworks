@@ -54,7 +54,9 @@ if(fps<27&&(OPT.qs||0)<3){qGood=0;if(t-qUp<40000)qLock=1e15;setQ((OPT.qs||0)+1,'
 else if(fps>50&&(OPT.qs||0)>0&&t>qLock){if(++qGood>=3){qGood=0;qUp=t;setQ((OPT.qs||0)-1,'Le jeu est fluide : qualité augmentée')}}else qGood=0}}}
 /* au retour sur la page : on oublie les mesures (la première image arrive toujours en retard) */
 document.addEventListener('visibilitychange',()=>{qWin=[0,0];qPause=performance.now()+2500});
-function resize(){D=Math.max(1,Math.min(DMAX,devicePixelRatio||1));cv.width=Math.round(innerWidth*D);cv.height=Math.round(innerHeight*D);RBC.clear()}
+/* Redimensionnement : le terrain en cache ne dépend pas de la taille de l’écran, on le garde ;
+   on ne touche au canvas que si sa taille change vraiment (la barre d’adresse mobile envoie des « resize » en rafale) */
+function resize(){D=Math.max(1,Math.min(DMAX,devicePixelRatio||1));const w=Math.round(innerWidth*D),h=Math.round(innerHeight*D);if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}}
 (()=>{const c=document.createElement('canvas');c.width=c.height=96;const g=c.getContext('2d'),im=g.createImageData(96,96);for(let i=0;i<im.data.length;i+=4){const v=Math.random()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=Math.random()*16}g.putImageData(im,0,0);document.documentElement.style.setProperty('--noise',`url(${c.toDataURL()})`)})();
 applyLang();$('hrv').innerHTML=RIVET;addEventListener('resize',resize);resize();resetState();newWorld();ui();
 let lt=performance.now(),fc=0,goHome=false,camGoal=null;
