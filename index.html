@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Isleworks · L’île-usine</title>
+<meta name="description" content="Jeu de gestion d’usine pour téléphone : extrais, automatise, agrandis ton île.">
+<meta name="theme-color" content="#121110">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Saira+Stencil+One&family=Share+Tech+Mono&display=swap">
+<link rel="stylesheet" href="style.css?v=3.0.0">
+</head>
+<body class="menu">
+<canvas id="c"></canvas>
+<div id="hud"><div class="lcd"><b id="money"></b><span id="rev">+0 $/min</span><span id="pw" hidden></span></div><button id="optb" aria-label="Réglages"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button><button id="snd" aria-label="Son"></button><button id="pz" aria-label="Pause"></button><button id="sx" class="m">×1</button></div>
+<div id="qp" hidden></div><div id="ctp"></div>
+<div id="dis" hidden><span>DÉMOLITION · REMBOURSÉ À 100 %</span></div>
+<div id="tb" class="plate" hidden></div><button id="hb" hidden aria-label="Revenir au centre"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
+<div id="sh" class="plate" hidden><div id="shh"><h4 id="sht" class="sten"></h4><button id="shx" aria-label="Fermer">✕</button></div><div id="shb"></div></div>
+<div id="dock" class="plate"></div>
+<div id="toast"></div><div id="win" hidden></div><div id="urb"><button id="uh" aria-label="Historique"></button><button id="ub0" aria-label="Annuler"></button><button id="rb0" aria-label="Rétablir"></button></div><div id="masc"><div class="mav"></div><div class="mb plate"><div class="mt"></div><div class="mc"><button data-r="prev" aria-label="Précédent"></button><span class="mn"></span><button data-r="next" class="pri" aria-label="Suivant"></button><button data-r="x" aria-label="Fermer"></button></div></div></div>
+<div id="rad" hidden></div>
+<div class="ver">v3.0</div><button id="lgb" class="m" style="position:fixed;z-index:22;top:calc(8px + var(--st));left:12px;padding:5px 10px;font-size:12px">FR · EN</button>
+<div id="home"><div class="hc"><div class="hrv" id="hrv"></div><div class="logo"><svg class="lg" viewBox="0 0 64 64"><path d="M6 46 Q18 38 32 44 T58 42 L58 58 L6 58Z" fill="#2b62a0"/><path d="M12 44 L12 26 L22 32 L22 24 L32 30 L32 18 L40 18 L40 44Z" fill="#ff9442"/><rect x="34" y="8" width="4" height="10" fill="#f2ead9"/><circle cx="36" cy="5" r="3" fill="#f2ead966"/></svg>ISLE<b>WORKS</b><span>L’ÎLE-USINE</span></div><div class="hz"></div><p class="tag2">Une île perdue, une poignée de dollars. Extrais, automatise, agrandis ton territoire parcelle par parcelle et nourris les vaisseaux qui passent.</p>
+<div id="cont"></div>
+<div class="lb">Nouvelle partie</div>
+<div class="dif" id="dif"><button data-d="easy">Détendu<small>1 100 $ · riche</small></button><button data-d="std" class="on">Standard<small>520 $ · normal</small></button><button data-d="hard">Hardcore<small>420 $ · rare</small></button></div>
+<button class="pri big pulse" id="go">Nouvelle partie</button>
+<button class="big" id="crb" style="margin-top:10px">Crédits</button><div id="cred" class="plate" hidden></div><button class="big" id="hw" style="margin-top:10px">Comment jouer</button>
+<div id="how" class="plate" hidden><b>1.</b> Ouvre <b>Construire</b> et pose un extracteur sur un gisement.<br><b>2.</b> Glisse le doigt depuis l’extracteur : les tapis se posent tout seuls.<br><b>3.</b> Fonderie, puis terminal de vente : l’argent tombe.<br><b>4.</b> Achète les parcelles en pointillés : le monde est infini, les ressources rares sont au loin.<br><b>Gestes :</b> un doigt déplace, deux doigts zooment, appui long = menu rapide, double tap = copier.</div></div></div>
+
+<script src="00-data.js?v=3.0.0"></script>
+<script src="01-world.js?v=3.0.0"></script>
+<script src="02-sim.js?v=3.0.0"></script>
+<script src="03-icons.js?v=3.0.0"></script>
+<script src="04-render.js?v=3.0.0"></script>
+<script src="05-fx.js?v=3.0.0"></script>
+<script src="06-ui.js?v=3.0.0"></script>
+<script src="07-quests.js?v=3.0.0"></script>
+<script src="076-mascot.js?v=3.0.0"></script>
+<script src="08-input.js?v=3.0.0"></script>
+<script src="085-i18n.js?v=3.0.0"></script>
+<script src="09-main.js?v=3.0.0"></script>
+<script>
+/* Mise en cache du jeu : lancement instantané et jeu hors ligne (uniquement quand le jeu est en ligne) */
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body></html>
