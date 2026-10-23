@@ -10,10 +10,16 @@ const RBJ=new Map(),RBOLD=new Map();let rbFrame=0;
 class RBMap extends Map{constructor(){super();this.px=0}
 set(k,c){const o=super.get(k);if(o)this.px-=o.width*o.height;this.px+=c.width*c.height;return super.set(k,c)}
 touch(k){const c=super.get(k);if(c){super.delete(k);super.set(k,c)}return c}
-evict(k){const c=super.get(k);if(!c)return;this.px-=c.width*c.height;super.delete(k);c.width=c.height=0}
-delete(k){const c=super.get(k);if(c){this.px-=c.width*c.height;super.delete(k);RBOLD.set(k,c)}RBJ.delete(k);return!!c}
-clear(){this.px=0;RBJ.clear();RBOLD.clear();return super.clear()}}
+evict(k){const c=super.get(k);if(!c)return;this.px-=c.width*c.height;super.delete(k);cvPut(c)}
+delete(k){const c=super.get(k);if(c){this.px-=c.width*c.height;super.delete(k);const o=RBOLD.get(k);if(o&&o!==c)cvPut(o);RBOLD.set(k,c)}RBJ.delete(k);if(c&&typeof OVC!='undefined')OVC.clear();return!!c}
+clear(){this.px=0;RBJ.clear();RBOLD.clear();if(typeof OVC!='undefined')OVC.clear();return super.clear()}}
 const RB=16,RBC=new RBMap();
+/* Réserve de canvas : créer/détruire des canvas pendant un déplacement coûte cher (mémoire graphique),
+   on recycle donc ceux qui sortent du cache. */
+const CPOOL=new Map();
+function cvGet(S,alpha){const k=S*2+(alpha?1:0),a=CPOOL.get(k);let c,g;if(a&&a.length){c=a.pop();g=c.getContext('2d');g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.globalCompositeOperation='source-over';g.setLineDash([]);if(alpha)g.clearRect(0,0,S,S)}
+else{c=document.createElement('canvas');c.width=c.height=S;c._a=alpha?1:0;g=c.getContext('2d',{alpha:!!alpha})}return[c,g]}
+function cvPut(c){if(!c||!c.width)return;const k=c.width*2+(c._a||0);let a=CPOOL.get(k);if(!a)CPOOL.set(k,a=[]);if(a.length<10)a.push(c);else c.width=c.height=0}
 function rbTrim(){const cap=Math.max(8e6,(typeof cv!='undefined'?cv.width*cv.height:2e6)*6);while(RBC.px>cap&&RBC.size>4)RBC.evict(RBC.keys().next().value)}
 /* ---------- Végétation : 8 essences, choisies selon le biome ---------- */
 const TG=[['#2a6433','#3a8742','#62b863'],['#2f5c2a','#487a33','#79b35a'],['#24604a','#357f5e','#58b58c'],['#4a5e22','#6b8a2c','#a3c45a']];
@@ -117,7 +123,7 @@ if(Z[0]>.5&&r<.05){/* évent de vapeur volcanique */g.fillStyle='#2a2020';g.begi
 if(r<.07){/* lichen */g.fillStyle='#b8c070aa';g.beginPath();g.ellipse(px,py,3.5,2.2,r*40,0,7);g.fill();g.fillStyle='#e0a040aa';g.beginPath();g.arc(px+3,py+1,1.4,0,7);g.fill();return true}}
 return false}
 const rbOf=l=>l>=8?4:l>=4?8:16;
-function rbNew(lod){const S=rbOf(lod)*TS*lod/2,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d',{alpha:false});g.scale(lod/2,lod/2);return[c,g]}
+function rbNew(lod){const r=cvGet(rbOf(lod)*TS*lod/2,0);r[1].scale(lod/2,lod/2);return r}
 function* blockGen(g,bx,by,lod){const rb=rbOf(lod);const ox=bx*rb,oy=by*rb;
 yield*groundPaintG(g,ox,oy,rb,rb,-1,-1,lod==1);
 if(lod>1)for(let j=0;j<rb;j++){for(let i=0;i<rb;i++){const x=ox+i,y=oy+j;if(Bi(x,y)&&(Bi(x+1,y)==0||Bi(x-1,y)==0||Bi(x,y+1)==0||Bi(x,y-1)==0)){g.fillStyle='rgba(255,255,255,.08)';g.fillRect(i*TS+2,j*TS+2,TS-4,TS-4)}}yield}
@@ -128,10 +134,19 @@ if(s==1){g.fillStyle='rgba(10,12,16,.45)';g.fillRect(X,Y,S2,S2)}else{const l=chu
 }
 function blockCanvas(bx,by,lod){const key=bx*1e6+by*10+lod;let c=RBC.touch(key);if(c)return c;const r=rbNew(lod);c=r[0];for(const _ of blockGen(r[1],bx,by,lod));RBJ.delete(key);RBOLD.delete(key);RBC.set(key,c);rbTrim();return c}
 /* Fabrication des blocs en tâche de fond, quelques millisecondes par image, les plus proches du centre d’abord */
+/* Aperçu instantané : 1 pixel par case (couleur du sol + brouillard), lissé à l’affichage.
+   Sert en attendant le vrai bloc : plus de gros carrés qui clignotent quand on dézoome fort. */
+const OVC=new Map(),RGBC=new Map();
+const rgbOf=s=>{let v=RGBC.get(s);if(!v){const m=String(s).match(/\d+/g)||[0,0,0];v=[+m[0],+m[1],+m[2]];RGBC.set(s,v)}return v};
+function ovBlock(bx,by){const key=bx*1e6+by;let e=OVC.get(key);if(e){OVC.delete(key);OVC.set(key,e);return e}
+const c=document.createElement('canvas');c.width=c.height=16;const g=c.getContext('2d',{alpha:false}),im=g.createImageData(16,16),d=im.data;
+for(let j=0;j<16;j++)for(let i=0;i<16;i++){const x=bx*16+i,y=by*16+j,ch=chunk(x>>3,y>>3),rgb=rgbOf(ch.col[((y&7)<<3)|(x&7)]),s=pstate(x>>3,y>>3),f=s==2?1:s==1?.55:ch.land?.12:.5,o=(j*16+i)*4;
+d[o]=rgb[0]*f+8*(1-f);d[o+1]=rgb[1]*f+10*(1-f);d[o+2]=rgb[2]*f+14*(1-f);d[o+3]=255}
+g.putImageData(im,0,0);OVC.set(key,c);while(OVC.size>900)OVC.delete(OVC.keys().next().value);return c}
 function rbWant(bx,by,lod,pri){const key=bx*1e6+by*10+lod;let j=RBJ.get(key);if(!j){j={key,bx,by,lod,it:null,c:null,pri};RBJ.set(key,j)}else if(j.f!==rbFrame||pri<j.pri)j.pri=pri;j.f=rbFrame}
 function rbRun(ms){if(!RBJ.size)return;const t0=performance.now(),list=[];for(const j of RBJ.values()){if(rbFrame-j.f>30){RBJ.delete(j.key);continue}list.push(j)}list.sort((a,b)=>a.pri-b.pri);
 for(const j of list){if(!j.it){const r=rbNew(j.lod);j.c=r[0];j.it=blockGen(r[1],j.bx,j.by,j.lod)}let done=false;while(performance.now()-t0<ms){if(j.it.next().done){done=true;break}}
-if(done){RBJ.delete(j.key);RBOLD.delete(j.key);RBC.set(j.key,j.c);rbTrim()}if(performance.now()-t0>=ms)return}}
+if(done){RBJ.delete(j.key);const o=RBOLD.get(j.key);if(o){RBOLD.delete(j.key);cvPut(o)}RBC.set(j.key,j.c);rbTrim()}if(performance.now()-t0>=ms)return}}
 /* Niveau de détail avec hystérésis : pas d’aller-retour quand on pince autour d’un seuil */
 let LODc=2;function lodPick(zd){const up=zd>2.4*1.08?8:zd>1.25*1.08?4:zd>.55*1.08?2:1,dn=zd>2.4/1.08?8:zd>1.25/1.08?4:zd>.55/1.08?2:1;if(LODc<up||LODc>dn)LODc=zd>2.4?8:zd>1.25?4:zd>.55?2:1;return LODc}
 function chev(y,col){const o=(time/500%1)*4;cx.strokeStyle=col;cx.lineWidth=3;cx.beginPath();cx.moveTo(-8,y+4-o);cx.lineTo(0,y-4-o);cx.lineTo(8,y+4-o);cx.stroke()}
@@ -275,17 +290,18 @@ cx.globalAlpha=1;cx.globalCompositeOperation='source-over'}
    ===================================================================== */
 const BB=16,BLC=new Map(),BLJ=new Map();let BLpx=0,BCR=0,blFrame=0;
 const THS=Object.create(null),thash=t=>THS[t]||(THS[t]=[...t].reduce((h,c)=>(h*31+c.charCodeAt(0))|0,7)||1);
-const bLive=b=>STORE[b.t]||b.ct||(b.leave&&time-b.leave<1500)||b.t=='beacon'||b.t=='wind'||b.t=='sorter'||(b.born&&time-b.born<420);
+/* types toujours dessinés en direct (leur image change souvent) : décidé par le type, pour que l’empreinte d’un bloc reste stable */
+const LIVET=nz({silo:1,crate:1,pad:1,beacon:1,wind:1,sorter:1});const bLive=b=>LIVET[b.t]||STORE[b.t]||(b.born&&time-b.born<420);
 const bsOf=z=>z<=.25?.25:z<=.375?.375:z<=.5?.5:z<=.75?.75:1;
 const planCol=b=>{const d=BD[b.t];return isBelt(b.t)?(b.t=='belt3'?'#2f7f8f':b.t=='belt2'?'#7a3a3a':'#4a525e'):d.m?'#c9733a':d.rt?'#3f7fb3':GEN[b.t]?'#d9b44a':d.inv?'#a77be0':b.t=='seller'||b.t=='pad'?'#3fbf6a':'#6b7280'};
 function planBatch(g,list){const B=Object.create(null);for(const b of list){const c=planCol(b);(B[c]||(B[c]=[])).push(b)}
 for(const c in B){g.fillStyle=c;g.beginPath();for(const b of B[c]){if(isBelt(b.t))g.rect(b.x*TS+6,b.y*TS+6,TS-12,TS-12);else{const s=bsz(b);g.rect(b.x*TS+2,b.y*TS+2,s*TS-4,s*TS-4)}}g.fill()}}
-function blEvict(){const cap=Math.max(6e6,cv.width*cv.height*3);while(BLpx>cap&&BLC.size>2){const k=BLC.keys().next().value,e=BLC.get(k);BLpx-=e.c.width*e.c.height;e.c.width=e.c.height=0;BLC.delete(k)}}
+function blEvict(){const cap=Math.max(6e6,cv.width*cv.height*3);while(BLpx>cap&&BLC.size>2){const k=BLC.keys().next().value,e=BLC.get(k);BLpx-=e.c.width*e.c.height;cvPut(e.c);BLC.delete(k)}}
 /* un bloc couvre ses 16×16 cases + 1 case à gauche/en haut et 3 à droite/en bas (débordements, grands bâtiments) */
-function blRender(j){const s=j.s,S=Math.ceil((BB+4)*TS*s),c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');
+function blRender(j){const s=j.s,S=Math.ceil((BB+4)*TS*s),[c,g]=cvGet(S,1);
 g.setTransform(s,0,0,s,-(j.bx*BB-1)*TS*s,-(j.by*BB-1)*TS*s);
 if(j.plan)planBatch(g,j.list);else{const o=cx,ol=LIVEB;cx=g;BCR=1;LIVEB=0;try{for(const b of j.list)drawB(b)}finally{cx=o;BCR=0;LIVEB=ol}}
-const old=BLC.get(j.key);if(old){BLpx-=old.c.width*old.c.height;old.c.width=old.c.height=0;BLC.delete(j.key)}
+const old=BLC.get(j.key);if(old){BLpx-=old.c.width*old.c.height;cvPut(old.c);BLC.delete(j.key)}
 BLC.set(j.key,{c,sig:j.sig});BLpx+=S*S;blEvict()}
 function blRun(ms){if(!BLJ.size)return;const t0=performance.now(),list=[...BLJ.values()].filter(j=>{if(blFrame-j.f>20){BLJ.delete(j.key);return false}return true}).sort((a,b)=>a.pri-b.pri);
 for(const j of list){if(performance.now()-t0>=ms)return;BLJ.delete(j.key);blRender(j)}}
@@ -296,10 +312,16 @@ blFrame++;const s=bsOf(ZSG),mode=(plan?'p':'s')+s,BX0=Math.floor((x0-3)/BB),BX1=
 const sig=new Int32Array(W*H),lists=new Array(W*H),live=[];
 for(const b of L){const bx=Math.floor(b.x/BB)-BX0,by=Math.floor(b.y/BB)-BY0;if(bx<0||by<0||bx>=W||by>=H)continue;if(bLive(b)){live.push(b);continue}const i=by*W+bx;
 sig[i]=(Math.imul(sig[i],31)+thash(b.t)+Math.imul(b.x,73856093)+Math.imul(b.y,19349663)+b.d*7+(b.lv||1)*131+(b.cv||0)*1009)|0;(lists[i]||(lists[i]=[])).push(b)}
-const cxw=(cam.x/TS-BB/2)/BB,cyw=(cam.y/TS-BB/2)/BB,ready=new Uint8Array(W*H),liveB=[];
+const cxw=(cam.x/TS-BB/2)/BB,cyw=(cam.y/TS-BB/2)/BB,ready=new Uint8Array(W*H),liveB=[];let syncN=2;
 for(let by=0;by<H;by++)for(let bx=0;bx<W;bx++){const i=by*W+bx,lst=lists[i];if(!lst){ready[i]=1;continue}const key=(BX0+bx)*1e6+(BY0+by)*100+mode.length*10+(s*8|0)+(plan?50:0),e=BLC.get(key);
 if(e&&e.sig===sig[i]){BLC.delete(key);BLC.set(key,e);ready[i]=1;cx.drawImage(e.c,((BX0+bx)*BB-1)*TS,((BY0+by)*BB-1)*TS,(BB+4)*TS,(BB+4)*TS);continue}
-let j=BLJ.get(key);if(!j){j={key};BLJ.set(key,j)}Object.assign(j,{bx:BX0+bx,by:BY0+by,s,plan,sig:sig[i],list:lst,f:blFrame,pri:(BX0+bx-cxw)**2+(BY0+by-cyw)**2});
+const jd={key,bx:BX0+bx,by:BY0+by,s,plan,sig:sig[i],list:lst,f:blFrame,pri:(BX0+bx-cxw)**2+(BY0+by-cyw)**2};
+/* petit changement (construction, rotation…) : bloc refait tout de suite, sans passer par le dessin direct (évite le clignotement) */
+if(e&&syncN>0){syncN--;BLJ.delete(key);blRender(jd);const e2=BLC.get(key);ready[i]=1;cx.drawImage(e2.c,((BX0+bx)*BB-1)*TS,((BY0+by)*BB-1)*TS,(BB+4)*TS,(BB+4)*TS);continue}
+let j=BLJ.get(key);if(!j){j={key};BLJ.set(key,j)}Object.assign(j,jd);
+/* en attendant : la même zone à une autre échelle si elle est à jour, sinon dessin direct */
+let alt=null;for(const s2 of[1,.75,.5,.375,.25]){if(s2==s)continue;const a=BLC.get((BX0+bx)*1e6+(BY0+by)*100+mode.length*10+(s2*8|0)+(plan?50:0));if(a&&a.sig===sig[i]){alt=a;break}}
+if(alt){ready[i]=1;cx.drawImage(alt.c,((BX0+bx)*BB-1)*TS,((BY0+by)*BB-1)*TS,(BB+4)*TS,(BB+4)*TS);continue}
 for(const b of lst)liveB.push(b)}
 /* blocs pas encore prêts : dessin direct de leurs bâtiments visibles */
 const vx0=x0-3,vx1=x1+1,vy0=y0-3,vy1=y1+2,inV=b=>b.x>=vx0&&b.x<=vx1&&b.y>=vy0&&b.y<=vy1;
@@ -318,7 +340,7 @@ for(let by=BY0;by<=BY1;by++)for(let bx=BX0;bx<=BX1;bx++){const key=bx*1e6+by*10+
 if(!c||RBOLD.has(key)){miss++;rbWant(bx,by,lz,(bx-ccx)**2+(by-ccy)**2)}
 if(!c){/* repli : un niveau déjà prêt, en découpant le bon morceau */let ok=0;for(const l2 of[4,2,1,8]){if(l2==lz)continue;const r2=rbOf(l2);if(r2<rbz)continue;const pbx=Math.floor(bx*rbz/r2),pby=Math.floor(by*rbz/r2),pk2=pbx*1e6+pby*10+l2,c2=RBC.get(pk2)||RBOLD.get(pk2);if(!c2)continue;const sc=TS*l2/2,sx=(bx*rbz-pbx*r2)*sc,sy=(by*rbz-pby*r2)*sc;cx.drawImage(c2,sx,sy,rbz*sc,rbz*sc,bx*rbz*TS,by*rbz*TS,rbz*TS+.5,rbz*TS+.5);ok=1;break}
 if(ok)continue;/* rien de prêt : on demande d’abord le bloc grossier (rapide), et couleurs du sol en attendant */if(lz!=1)rbWant(Math.floor(bx*rbz/16),Math.floor(by*rbz/16),1,-1);
-const n=Math.max(1,rbz/8|0),w=rbz/n;for(let j=0;j<n;j++)for(let i=0;i<n;i++){const x=bx*rbz+i*w+(w>>1),y=by*rbz+j*w+(w>>1),ch=chunk(x>>3,y>>3);cx.fillStyle=ch.col[((y&7)<<3)|(x&7)];cx.fillRect((bx*rbz+i*w)*TS,(by*rbz+j*w)*TS,w*TS+.5,w*TS+.5)}continue}
+{const ob=Math.floor(bx*rbz/16),oby=Math.floor(by*rbz/16),oc=ovBlock(ob,oby),sx=(bx*rbz-ob*16),sy=(by*rbz-oby*16);cx.drawImage(oc,sx,sy,rbz,rbz,bx*rbz*TS,by*rbz*TS,rbz*TS+.5,rbz*TS+.5)}continue}
 cx.drawImage(c,bx*rbz*TS,by*rbz*TS,rbz*TS+.5,rbz*TS+.5)}
 /* préparation à l’avance : l’anneau de blocs autour de l’écran, une fois l’écran complet */
 if(!miss&&!zooming)for(let by=BY0-1;by<=BY1+1;by++)for(let bx=BX0-1;bx<=BX1+1;bx++){if(by>=BY0&&by<=BY1&&bx>=BX0&&bx<=BX1)continue;const key=bx*1e6+by*10+lz;if(RBC.has(key))RBC.touch(key);else rbWant(bx,by,lz,1e6+(bx-ccx)**2+(by-ccy)**2)}}
@@ -351,7 +373,9 @@ cx.globalAlpha=.6;if(!d.plat)drawB(mk(tool,hx,hy,dir));cx.globalAlpha=1;cx.fillS
 nightPass(vis,x0,x1,y0,y1);
 drawPT();if(!menu){drawFog(px0,px1,py0,py1,z);drawSpot(z);drawHand(z)}
 for(let i=fl.length-1;i>=0;i--){const f=fl[i],a=(time-f.t)/1000;if(a>1.2){fl.splice(i,1);continue}cx.globalAlpha=Math.max(0,1-a/1.2);cx.fillStyle='#FA9549';cx.font='16px Share Tech Mono,monospace';cx.textAlign='center';cx.fillText(f.s,f.x,f.y-a*30);cx.globalAlpha=1}
-{const zm=time-zMoveT<350;rbRun(zm?2:Math.max(2,9-(performance.now()-FT0)));if(!zm)blRun(Math.max(1.5,11-(performance.now()-FT0)))}}
+{const zm=time-zMoveT<350,mv=(typeof P!='undefined'&&P&&P.mv)||(typeof camGoal!='undefined'&&camGoal)||(typeof goHome!='undefined'&&goHome),el=performance.now()-FT0;
+/* pendant un geste : peu de travail de fond par image (fluidité d’abord) ; au repos : on rattrape */
+rbRun(zm?1.5:mv?Math.max(1.5,6-el):Math.max(2,10-el));if(!zm)blRun(mv?Math.max(1,8-(performance.now()-FT0)):Math.max(1.5,12-(performance.now()-FT0)))}}
 /* Main du tutoriel : montre le geste à faire (glisser, ou toucher) */
 function hand(x,y,s,press){cx.save();cx.translate(x,y);cx.scale(s,s);if(press)cx.scale(.88,.88);cx.lineJoin='round';
 const sh=(f)=>{cx.beginPath();cx.roundRect(-3,0,6,15,3);f();cx.beginPath();cx.roundRect(-7,11,15,13,5);f();cx.beginPath();cx.ellipse(-8,16,3,5.5,.45,0,7);f()};

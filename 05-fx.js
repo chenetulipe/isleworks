@@ -63,33 +63,33 @@ const TRACKS=[
 {id:'brume',n:'Brume',bpm:56,cb:2,ch:[[50,54,57,61,64],[47,50,54,57,61],[43,47,50,54,57],[45,49,52,57,59]],pad:['sine',1300,.034],bass:'long',mel:.12,sc:[0,2,4,7,9,12,14],root:74,dr:'none',bell:1},
 {id:'neon',n:'Néon',bpm:96,cb:1,ch:[[52,55,59],[48,52,55],[55,59,62],[50,54,57]],pad:['sawtooth',650,.016],bass:'pulse',mel:.1,sc:[0,3,5,7,10,12],root:64,dr:'synth',arp:1},
 {id:'cafe',n:'Café',bpm:84,cb:1,ch:[[50,53,57,60,64],[43,53,57,59,64],[48,52,55,59,62],[45,49,55,58,61]],pad:['triangle',1100,.022],bass:'walk',mel:.22,sc:[0,2,3,5,7,9,10,12],root:62,dr:'jazz',swing:.17}];
-let MUS=null,musT=0,musStep=0,trk=0,trkBars=0;const mf=n=>440*Math.pow(2,(n-69)/12);
+let MUS=null,musStep=0,trk=0,trkBars=0;const mf=n=>440*Math.pow(2,(n-69)/12);
+/* Les morceaux sont désormais PRÉ-ENREGISTRÉS (fichiers mus-lofi.mp3, mus-brume.mp3, mus-neon.mp3,
+   mus-cafe.mp3 : 24 mesures qui bouclent sans coupure, rendus avec le séquenceur d’origine).
+   Plus aucun synthétiseur ne tourne pendant le jeu : beaucoup moins de calcul et de saccades.
+   Un seul morceau décodé en mémoire à la fois (plus le suivant pendant un fondu). */
+const MBUF=Object.create(null),MLOAD=Object.create(null);let mNow=null,mWant='',mNext=null,mEnded=false;
 function musVol(){if(MUS)MUS.gain.setTargetAtTime(OPT.music&&!muted?(menu?.45:.55):0,AC.currentTime,1.5)}
 function pickTrack(){const want=OPT.track||'auto';if(want!='auto'){const i=TRACKS.findIndex(t=>t.id==want);if(i>=0)trk=i;return}trk=(trk+1+(Math.random()*(TRACKS.length-1)|0))%TRACKS.length}
-function musicStart(){if(!AC||!MS||MUS)return;MUS=AC.createGain();MUS.gain.value=0;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2600;MUS.connect(lp);lp.connect(MS);const rs=AC.createGain();rs.gain.value=.5;MUS.connect(rs);rs.connect(RV);
-trk=Math.random()*TRACKS.length|0;if(OPT.track&&OPT.track!='auto')pickTrack();musT=AC.currentTime+.3;setInterval(musSched,150);musVol()}
-const FBUS=Object.create(null);function bus(type,f){const k=type+f;let b=FBUS[k];if(!b){b=FBUS[k]=AC.createBiquadFilter();b.type=type;b.frequency.value=f;b.connect(MUS)}return b}
-let voices=0;
-function mnote(f,t,d,type,v,att,lp){if(voices>26)return;voices++;const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+att);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(lp?bus('lowpass',lp):MUS);o.start(t);o.stop(t+d+.05);o.onended=()=>{voices--;g.disconnect()}}
-function mnoise(t,d,v,f){if(voices>26)return;voices++;const s=AC.createBufferSource(),g=AC.createGain();s.buffer=NB;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(g);g.connect(bus('highpass',f));s.start(t,Math.random()*.5);s.stop(t+d+.02);s.onended=()=>{voices--;g.disconnect()}}
-function kick(t,v){if(voices>26)return;voices++;const o=AC.createOscillator(),g=AC.createGain();o.onended=()=>{voices--;g.disconnect()};o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(42,t+.12);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+.3);o.connect(g);g.connect(MUS);o.start(t);o.stop(t+.32)}
-function musSched(){if(!MUS)return;if(!(OPT.music&&!muted)){musT=AC.currentTime+.2;return}
-while(musT<AC.currentTime+.7){const T0=menu?TRACKS[1]:TRACKS[trk],B=60/T0.bpm,step=musStep%8,bar=Math.floor(musStep/8),ci=Math.floor(bar/T0.cb)%T0.ch.length,ch=T0.ch[ci],sw=step%2&&T0.swing?B*T0.swing:0,t=musT+sw;
-if(step==0&&bar%T0.cb==0)for(const n of ch)mnote(mf(n),t,B*4*T0.cb+.3,T0.pad[0],T0.pad[2],T0.cb>1?1.6:.8,T0.pad[1]);
-/* basse */
-if(T0.bass=='root'){if(step==0)mnote(mf(ch[0]-24),t,B*3.4,'sine',.085,.06);if(step==4)mnote(mf(ch[0]-17),t,B*1.6,'sine',.055,.06)}
-else if(T0.bass=='long'){if(step==0&&bar%T0.cb==0)mnote(mf(ch[0]-24),t,B*8,'sine',.07,1.2)}
-else if(T0.bass=='pulse'){mnote(mf(ch[0]-24+(step%2?12:0)),t,B*.45,'sawtooth',.03,.005,400)}
-else if(T0.bass=='walk'&&step%2==0){const w=[ch[0],ch[1]||ch[0]+3,ch[2]||ch[0]+7,(ch[2]||ch[0]+7)+(Math.random()<.5?2:-1)][step/2];mnote(mf(w-24),t,B*.95,'triangle',.08,.01,700)}
-/* arpège (Néon) */
-if(T0.arp){const n=ch[step%ch.length]+12+(step>=4?12:0);mnote(mf(n),t,B*.4,'square',.012,.004,1600)}
-/* petite mélodie */
-if(Math.random()<(step%2?T0.mel*.55:T0.mel)){const n=T0.root+T0.sc[Math.random()*T0.sc.length|0],len=T0.bell?B*4:B*1.8;mnote(mf(n),t+(step%2&&!T0.swing?B*.09:0),len,'sine',T0.bell?.024:.028,.012,2600);mnote(mf(n)*(T0.bell?3:2),t,len*.35,'sine',T0.bell?.007:.005,.01)}
-/* batterie */
-if(T0.dr=='lofi'){if(step==0||step==4)kick(t,.07);if(step%2==1)mnoise(t+B*.08,.05,.01,7500);if(step==2||step==6)mnoise(t,.14,.014,2500)}
-else if(T0.dr=='synth'){if(step%2==0)kick(t,.08);if(step==2||step==6)mnoise(t,.18,.02,1800);mnoise(t,.03,.006,9000)}
-else if(T0.dr=='jazz'){if(step%2==0)mnoise(t,.22,.008,3500);if(step==3||step==7)mnoise(t,.08,.009,6000);if(step==0&&Math.random()<.5)kick(t,.04)}
-musT+=B/2;musStep++;if(step==7&&++trkBars>=24&&(OPT.track||'auto')=='auto'){trkBars=0;pickTrack();musStep=0}}}
+const musAuto=()=>(OPT.track||'auto')=='auto'&&!menu,musId=()=>menu?'brume':TRACKS[trk].id;
+function musBuf(id){if(MBUF[id])return Promise.resolve(MBUF[id]);if(MLOAD[id])return MLOAD[id];
+return MLOAD[id]=fetch('mus-'+id+'.mp3').then(r=>{if(!r.ok)throw new Error('mus');return r.arrayBuffer()}).then(ab=>new Promise((res,rej)=>AC.decodeAudioData(ab,res,rej))).then(b=>{delete MLOAD[id];MBUF[id]=b;
+for(const k in MBUF)if(k!=id&&k!=(mNow&&mNow.id))delete MBUF[k];return b}).catch(e=>{delete MLOAD[id];throw e})}
+function musPlay(id,buf){const t=AC.currentTime+.05,g=AC.createGain(),s=AC.createBufferSource();s.buffer=buf;s.loop=!musAuto();s.connect(g);g.connect(MUS);
+g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(1,t+(mNow?2:.5));
+if(mNow){const o=mNow;o.s.onended=null;o.g.gain.cancelScheduledValues(t);o.g.gain.setValueAtTime(o.g.gain.value,t);o.g.gain.linearRampToValueAtTime(0,t+2);try{o.s.stop(t+2.1)}catch(e){}}
+const cur={id,s,g,t0:t,dur:buf.duration};s.onended=()=>{if(mNow===cur){mNow=null;mEnded=true}};s.start(t);mNow=cur}
+function musStop(){if(!mNow)return;try{mNow.s.onended=null;mNow.s.stop(AC.currentTime+1.8)}catch(e){}mNow=null}
+function musWatch(){if(!MUS||!AC)return;if(!(OPT.music&&!muted)){musStop();mNext=null;return}
+if(mEnded){mEnded=false;if(musAuto())pickTrack()}
+if(mNow&&mNow.id==musId()){mNow.s.loop=!musAuto();
+/* mode Auto : on prépare le morceau suivant et on enchaîne en fondu juste avant la fin */
+if(musAuto()){const rem=mNow.t0+mNow.dur-AC.currentTime;if(rem<15&&!mNext){const k=trk;pickTrack();mNext=TRACKS[trk].id;trk=k;musBuf(mNext).catch(()=>{mNext=null})}
+if(rem<2.5&&mNext&&MBUF[mNext]){trk=TRACKS.findIndex(t=>t.id==mNext);const id=mNext;mNext=null;musPlay(id,MBUF[id])}}return}
+const want=musId();if(mWant==want)return;mWant=want;mNext=null;
+musBuf(want).then(b=>{mWant='';if(musId()==want&&OPT.music&&!muted&&!(mNow&&mNow.id==want))musPlay(want,b)}).catch(()=>{mWant=''})}
+function musicStart(){if(!AC||!MS||MUS)return;MUS=AC.createGain();MUS.gain.value=0;MUS.connect(MS);
+trk=Math.random()*TRACKS.length|0;if(OPT.track&&OPT.track!='auto')pickTrack();setInterval(musWatch,400);musWatch();musVol()}
 /* Ambiance : ressac de l’océan + bourdonnement proportionnel aux machines actives */
 function ambStart(){if(!AC||!MS||AMB)return;const src=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain(),lfo=AC.createOscillator(),lg=AC.createGain();src.buffer=NB;src.loop=true;f.type='lowpass';f.frequency.value=420;g.gain.value=.016;lfo.frequency.value=.11;lg.gain.value=.011;lfo.connect(lg);lg.connect(g.gain);src.connect(f);f.connect(g);g.connect(MS);src.start();lfo.start();
 const hum=AC.createOscillator(),hf=AC.createBiquadFilter(),hg=AC.createGain();hum.type='sawtooth';hum.frequency.value=55;hf.type='lowpass';hf.frequency.value=170;hg.gain.value=0;hum.connect(hf);hf.connect(hg);hg.connect(MS);hum.start();AMB={g,hg}}
