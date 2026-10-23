@@ -6,9 +6,12 @@ const SK='ficsit-usine-v4',SV=4;let offGain=0,offMin=0;
 function save(){if(menu)return false;try{const prev=localStorage.getItem(SK);if(prev)localStorage.setItem(SK+'-bak',prev);localStorage.setItem(SK,JSON.stringify({v:SV,seed:SEED,wv:WV,inv:INV,bp:BP,ct:CT.map(c=>({x:c.pad.x,y:c.pad.y,item:c.item,n:c.n,got:c.got,left:c.dur-(tk_-c.t0),dur:c.dur,reward:c.reward})),ev:EV,evn:evNext,diff,money,gt,tk:tk_,dir,own:[...OWN],found:[...FOUND],plat:[...PLAT],
 L:L.map(b=>[b.t,b.x,b.y,b.d,b.rec,b.lv,b.tot,b.st2,b.out,b.buf,b.flt||0,b.fq||0,b.q&&b.q.length?b.q.map(e=>[e.it,Math.round(e.p*100)]):0,b.mode||b.ch||b.wat||b.dq||b.rq?{m:b.mode,c:Math.round(b.ch||0),w:b.wat||0,dq:b.dq||0,rq:b.rq||0}:0]),u:[...U.b],ur:[...U.r],ux:[...U.x],ut:[...U.t],m,sold,recent,st,qi,cfgMem,ach:[...ACHD],tips:[...seenTips],ts:Date.now(),rate:REV,cam:[cam.x,cam.y,cam.z]}));return true}catch(e){return false}}
 function readSave(){for(const k of[SK,SK+'-bak']){try{const s=JSON.parse(localStorage.getItem(k)||'null');if(s&&s.v==SV&&Array.isArray(s.L))return s}catch(e){}}return null}
-function exportSave(){save();const j=localStorage.getItem(SK)||'';return'ISLE1:'+btoa(unescape(encodeURIComponent(j)))}
-function importSave(code){try{code=(code||'').trim();if(!code.startsWith('ISLE1:'))return false;const j=decodeURIComponent(escape(atob(code.slice(6)))),s=JSON.parse(j);if(!s||s.v!=SV||!Array.isArray(s.L))return false;
-const old=localStorage.getItem(SK);if(old)localStorage.setItem(SK+'-bak',old);localStorage.setItem(SK,j);return load()}catch(e){return false}}
+async function exportSave(){save();const j=localStorage.getItem(SK);if(!j)throw new Error('Aucune partie à exporter');return IsleSave.encode(JSON.parse(j))}
+async function importSave(code){let s;try{s=await IsleSave.decode(code)}catch(e){return(e&&e.message)||'Code invalide'}
+if(!s||s.v!=SV||!Array.isArray(s.L))return'Cette save vient d’une autre version du jeu.';
+try{const j=JSON.stringify(s),old=localStorage.getItem(SK);if(old)localStorage.setItem(SK+'-bak',old);localStorage.setItem(SK,j);return load()?true:'Chargement impossible.'}catch(e){return'Chargement impossible.'}}
+let lastCode='';
+function doImport(t){importSave(t).then(r=>{if(r===true){closeSheet();toast('Partie importée','ok')}else toast(r||'Code invalide','bad')})}
 function load(){const s=readSave();if(!s)return false;resetState();SEED=s.seed;WV=s.wv||1;CT.length=0;EV=s.ev&&EVD[s.ev.k]?s.ev:null;evNext=s.evn||300000;BP=s.bp&&s.bp.items?s.bp:null;bpMode=null;for(const k in ZK)delete ZK[k];INV=Object.assign(INV0(),s.inv||{});for(const k in INV)if(INV[k]>0)U.b.add(k);diff=DIF[s.diff]?s.diff:'std';CHK.clear();DEP.clear();RBC.clear();OWN.clear();FOUND.clear();
 s.own.forEach(k=>OWN.add(k));(s.found||[]).forEach(k=>FOUND.add(k));PLAT.clear();(s.plat||[]).forEach(k=>PLAT.add(k));money=s.money;gt=s.gt||0;tk_=s.tk||0;dir=s.dir||1;
 U.b=new Set(s.u);U.r=new Set(s.ur);U.x=new Set(s.ux);U.t=new Set(s.ut);for(const k in IT){if(s.m&&s.m[k]!=null)m[k]=s.m[k];if(s.sold&&s.sold[k]!=null)sold[k]=s.sold[k]}
