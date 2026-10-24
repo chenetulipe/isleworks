@@ -305,7 +305,7 @@ const old=BLC.get(j.key);if(old){BLpx-=old.c.width*old.c.height;cvPut(old.c);BLC
 BLC.set(j.key,{c,sig:j.sig});BLpx+=S*S;blEvict()}
 function blRun(ms){if(!BLJ.size)return;const t0=performance.now(),list=[...BLJ.values()].filter(j=>{if(blFrame-j.f>20){BLJ.delete(j.key);return false}return true}).sort((a,b)=>a.pri-b.pri);
 for(const j of list){if(performance.now()-t0>=ms)return;BLJ.delete(j.key);blRender(j)}}
-function drawBuildings(vis,x0,x1,y0,y1){const plan=ZSG<.42;
+function drawBuildings(vis,x0,x1,y0,y1){if(PFX.nob)return;const plan=ZSG<.42;
 /* zoomé (ou petite usine) : dessin direct comme avant */
 if(ZSG>=1||L.length<120){if(plan)planBatch(cx,vis);else{for(const b of vis)drawBA(b);for(const b of vis)if(BD[b.t].rt||BD[b.t].m)stat(b)}return}
 blFrame++;const s=bsOf(ZSG),mode=(plan?'p':'s')+s,BX0=Math.floor((x0-3)/BB),BX1=Math.floor((x1+1)/BB),BY0=Math.floor((y0-3)/BB),BY1=Math.floor((y1+1)/BB),W=BX1-BX0+1,H=BY1-BY0+1;

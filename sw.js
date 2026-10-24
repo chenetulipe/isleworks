@@ -1,8 +1,8 @@
 /* Isleworks : mise en cache pour un lancement instantané et le jeu hors ligne.
    À CHAQUE MISE À JOUR DU JEU : changer VERSION ci-dessous et le ?v= dans index.html
    (le script version.py le fait pour toi), sinon les joueurs gardent l'ancienne version. */
-const VERSION='isleworks-3.2.1';
-const FILES=["./", "index.html", "manifest.webmanifest", "style.css?v=3.2.1", "00-data.js?v=3.2.1", "01-world.js?v=3.2.1", "02-sim.js?v=3.2.1", "03-icons.js?v=3.2.1", "04-render.js?v=3.2.1", "05-fx.js?v=3.2.1", "06-ui.js?v=3.2.1", "07-quests.js?v=3.2.1", "076-mascot.js?v=3.2.1", "08-input.js?v=3.2.1", "085-i18n.js?v=3.2.1", "087-perf.js?v=3.2.1", "088-save.js?v=3.2.1", "09-main.js?v=3.2.1", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
+const VERSION='isleworks-3.2.2';
+const FILES=["./", "index.html", "manifest.webmanifest", "style.css?v=3.2.2", "00-data.js?v=3.2.2", "01-world.js?v=3.2.2", "02-sim.js?v=3.2.2", "03-icons.js?v=3.2.2", "04-render.js?v=3.2.2", "05-fx.js?v=3.2.2", "06-ui.js?v=3.2.2", "07-quests.js?v=3.2.2", "076-mascot.js?v=3.2.2", "08-input.js?v=3.2.2", "085-i18n.js?v=3.2.2", "087-perf.js?v=3.2.2", "088-save.js?v=3.2.2", "09-main.js?v=3.2.2", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(VERSION).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()))});
 const AUDIO='isleworks-audio-1';
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==VERSION&&k!==AUDIO).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});

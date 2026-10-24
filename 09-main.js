@@ -43,14 +43,17 @@ else if(localStorage.getItem('ficsit-usine'))$('cont').innerHTML='<div class="hi
    BOUCLE PRINCIPALE
    ===================================================================== */
 /* Qualité : OPT.qm = 'auto' (adaptative), 'max' ou 'eco' ; OPT.qs = palier actuel (0 = maximum … 3 = minimum) */
-const QD=[2,2,1.5,1];if(OPT.qm=='max')OPT.qs=0;else if(OPT.qm=='eco')OPT.qs=2;let DMAX=QD[OPT.qs||0],qWin=[0,0],qGood=0,qPause=0,qLock=0,qUp=-1e9;
+const QD=[2,2,1.5,1];if(OPT.qm=='max')OPT.qs=0;else if(OPT.qm=='eco')OPT.qs=2;let qChk=null,qNoHelp=false,DMAX=QD[OPT.qs||0],qWin=[0,0],qGood=0,qPause=0,qLock=0,qUp=-1e9;
 function setQ(n,why){n=Math.max(0,Math.min(3,n));const was=OPT.qs||0;if(n==was)return;OPT.qs=n;
 if(n>=1&&was<1&&(OPT.fx||OPT.deco)){OPT.autoOff=true;OPT.fx=false;OPT.deco=false;RBC.clear()}
 if(n==0&&OPT.autoOff){OPT.autoOff=false;OPT.fx=true;OPT.deco=true;RBC.clear()}
 DMAX=QD[n];saveOpt();resize();if(why)toast(why)}
 /* mesure sur des fenêtres de 6 s (images/s moyennes), en ignorant les à-coups isolés (> 250 ms) */
 function qStep(t,dt){if((OPT.qm||'auto')=='auto'&&!menu&&!document.hidden&&t>qPause&&dt<250){qWin[0]+=dt;qWin[1]++;if(qWin[0]>6000){const fps=qWin[1]*1000/qWin[0];qWin=[0,0];
-if(fps<27&&(OPT.qs||0)<3){qGood=0;if(t-qUp<40000)qLock=1e15;setQ((OPT.qs||0)+1,'Qualité réduite automatiquement pour garder le jeu fluide')}
+if(PF.diag){}
+/* la baisse précédente n'a pas aidé (le téléphone plafonne lui-même les images/s) : on remet la qualité et on n'y touche plus */
+else if(qChk){const c=qChk;qChk=null;if(fps<c.fps*1.15){qNoHelp=true;setQ(c.lv,'Qualité rétablie : la baisser ne rendait pas le jeu plus fluide')}}
+else if(fps<27&&(OPT.qs||0)<3&&!qNoHelp){qGood=0;if(t-qUp<40000)qLock=1e15;qChk={fps,lv:OPT.qs||0};setQ((OPT.qs||0)+1,'Qualité réduite automatiquement pour garder le jeu fluide')}
 else if(fps>50&&(OPT.qs||0)>0&&t>qLock){if(++qGood>=3){qGood=0;qUp=t;setQ((OPT.qs||0)-1,'Le jeu est fluide : qualité augmentée')}}else qGood=0}}}
 /* au retour sur la page : on oublie les mesures (la première image arrive toujours en retard) */
 document.addEventListener('visibilitychange',()=>{qWin=[0,0];qPause=performance.now()+2500});
@@ -78,7 +81,7 @@ setMoney(money);fxStep(dt);weather(dt);fc++;const every=!sheet||sheet=='i'||shee
 /* plafond : 60 i/s (les écrans 90/120 Hz dessinaient 2× trop) ; 30 i/s en Économie, ou au palier bas quand rien ne bouge */
 if(FLING&&!P){cam.x+=FLING.vx*dt/cam.z;cam.y+=FLING.vy*dt/cam.z;const fk=Math.exp(-dt/320);FLING.vx*=fk;FLING.vy*=fk;if(Math.hypot(FLING.vx,FLING.vy)<.03)FLING=null}
 const moving=!!P||!!FLING||camGoal||time-zMoveT<400,cap=OPT.qm=='eco'&&!moving?32:15.5;const due=t-lastDraw>=cap;
-if(due&&(fc%every==0||P&&sheet!='t')){lastDraw=t;const td=performance.now();draw(Math.min(1,acc/TM));drawRain();drawEvent();drawPings();drawSP();pfDraw(performance.now()-td)}if(sheet=='map'){mmStep();if(fc%2==0)drawMap()}
+if(due&&!PFX.skip&&(fc%every==0||P&&sheet!='t')){lastDraw=t;const td=performance.now();draw(Math.min(1,acc/TM));drawRain();drawEvent();drawPings();drawSP();pfDraw(performance.now()-td)}if(sheet=='map'){mmStep();if(fc%2==0)drawMap()}
 if(camGoal&&!menu){cam.x+=(camGoal.x-cam.x)*.18;cam.y+=(camGoal.y-cam.y)*.18;if(Math.hypot(camGoal.x-cam.x,camGoal.y-cam.y)<1)camGoal=null}
 if(goHome&&!menu){cam.x+=(0-cam.x)*.14;cam.y+=(0-cam.y)*.14;if(Math.hypot(cam.x,cam.y)<4)goHome=false}
 pfFrame(t,dt);if(fc%15==0){const far=!menu&&!sheet&&!tool&&!dis&&Math.hypot(cam.x,cam.y)>TS*14;$('hb').hidden=!far}requestAnimationFrame(frame)}
