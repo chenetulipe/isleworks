@@ -73,13 +73,13 @@ let lastDraw=0;function frame(t){const dt=Math.min(100,t-lt);lt=t;time=t;if(!men
 /* Qualité adaptative par paliers : d'abord les effets, puis la résolution (jamais d'un coup) */
 qStep(t,dt);
 if(menu){cam.x=Math.cos(t/9000)*260;cam.y=Math.sin(t/7000)*200;cam.z=.8}
-else if(!paused){acc+=dt*spd;gt+=dt*spd;let n=0;while(acc>=TM&&n++<8){acc-=TM;tick()}if(acc>TM)acc=TM}
+else if(!paused){acc+=dt*spd;gt+=dt*spd;let n=0;const ts=performance.now();while(acc>=TM&&n++<8){acc-=TM;tick()}if(n)pfSim(performance.now()-ts,Math.min(n,8));if(acc>TM)acc=TM}
 setMoney(money);fxStep(dt);weather(dt);fc++;const every=!sheet||sheet=='i'||sheet=='info'?1:sheet=='t'?1e9:3;
 /* plafond : 60 i/s (les écrans 90/120 Hz dessinaient 2× trop) ; 30 i/s en Économie, ou au palier bas quand rien ne bouge */
 if(FLING&&!P){cam.x+=FLING.vx*dt/cam.z;cam.y+=FLING.vy*dt/cam.z;const fk=Math.exp(-dt/320);FLING.vx*=fk;FLING.vy*=fk;if(Math.hypot(FLING.vx,FLING.vy)<.03)FLING=null}
 const moving=!!P||!!FLING||camGoal||time-zMoveT<400,cap=OPT.qm=='eco'&&!moving?32:15.5;const due=t-lastDraw>=cap;
-if(due&&(fc%every==0||P&&sheet!='t')){lastDraw=t;draw(Math.min(1,acc/TM));drawRain();drawEvent();drawPings();drawSP()}if(sheet=='map'){mmStep();if(fc%2==0)drawMap()}
+if(due&&(fc%every==0||P&&sheet!='t')){lastDraw=t;const td=performance.now();draw(Math.min(1,acc/TM));drawRain();drawEvent();drawPings();drawSP();pfDraw(performance.now()-td)}if(sheet=='map'){mmStep();if(fc%2==0)drawMap()}
 if(camGoal&&!menu){cam.x+=(camGoal.x-cam.x)*.18;cam.y+=(camGoal.y-cam.y)*.18;if(Math.hypot(camGoal.x-cam.x,camGoal.y-cam.y)<1)camGoal=null}
 if(goHome&&!menu){cam.x+=(0-cam.x)*.14;cam.y+=(0-cam.y)*.14;if(Math.hypot(cam.x,cam.y)<4)goHome=false}
-if(fc%15==0){const far=!menu&&!sheet&&!tool&&!dis&&Math.hypot(cam.x,cam.y)>TS*14;$('hb').hidden=!far}requestAnimationFrame(frame)}
+pfFrame(t,dt);if(fc%15==0){const far=!menu&&!sheet&&!tool&&!dis&&Math.hypot(cam.x,cam.y)>TS*14;$('hb').hidden=!far}requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
