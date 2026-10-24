@@ -44,6 +44,18 @@ else if(localStorage.getItem('ficsit-usine'))$('cont').innerHTML='<div class="hi
    ===================================================================== */
 /* Qualité : OPT.qm = 'auto' (adaptative), 'max' ou 'eco' ; OPT.qs = palier actuel (0 = maximum … 3 = minimum) */
 const QD=[2,2,1.5,1];if(OPT.qm=='max')OPT.qs=0;else if(OPT.qm=='eco')OPT.qs=2;let qChk=null,qNoHelp=false,DMAX=QD[OPT.qs||0],qWin=[0,0],qGood=0,qPause=0,qLock=0,qUp=-1e9;
+/* Mode Auto : la résolution s’adapte en continu (de 1× à 2×) pour tenir ~60 images/s ; effets et décors restent allumés.
+   (Les mesures sur téléphone ont montré que c’est le nombre de pixels qui limite, pas le calcul.) */
+if((OPT.qm||'auto')=='auto'){if(OPT.autoOff){OPT.autoOff=false;OPT.fx=true;OPT.deco=true}OPT.qs=0;DMAX=Math.min(2,Math.max(1,OPT.rs||2))}
+let rsWin=[0,0],rsGood=0,rsCeil=9,rsCeilT=0,rsChk=null,rsNoHelp=false,rsLow=0;
+function rsSet(v){v=Math.round(Math.min(2,Math.max(1,v))*8)/8;if(v===DMAX)return;DMAX=v;OPT.rs=v;saveOpt();resize()}
+function rsStep(t,dt){if((OPT.qm||'auto')!='auto'||menu||document.hidden||t<qPause||dt>=250||PF.diag)return;rsWin[0]+=dt;rsWin[1]++;if(rsWin[0]<2000)return;
+const fps=rsWin[1]*1000/rsWin[0];rsWin=[0,0];if(t>rsCeilT)rsCeil=9;
+/* la baisse précédente n’a rien changé : c’est le téléphone qui plafonne, on remet la résolution et on n’y touche plus */
+if(rsChk){const c=rsChk;rsChk=null;if(fps<c.fps*1.1){rsNoHelp=true;rsSet(c.v);return}}
+if(fps<50&&DMAX>1&&!rsNoHelp){rsCeil=DMAX;rsCeilT=t+60000;rsGood=0;rsChk={fps,v:DMAX};rsSet(DMAX-(fps<38?.5:.25));return}
+if(fps<33&&DMAX<=1&&(OPT.fx||OPT.deco)&&++rsLow>=2){OPT.autoOff=true;OPT.fx=false;OPT.deco=false;RBC.clear();saveOpt();toast('Effets et décors coupés pour garder le jeu fluide');return}
+if(fps>=57&&DMAX<Math.min(2,devicePixelRatio||1)&&DMAX+.125<rsCeil){if(++rsGood>=3){rsGood=0;rsSet(DMAX+.125)}}else rsGood=0}
 function setQ(n,why){n=Math.max(0,Math.min(3,n));const was=OPT.qs||0;if(n==was)return;OPT.qs=n;
 if(n>=1&&was<1&&(OPT.fx||OPT.deco)){OPT.autoOff=true;OPT.fx=false;OPT.deco=false;RBC.clear()}
 if(n==0&&OPT.autoOff){OPT.autoOff=false;OPT.fx=true;OPT.deco=true;RBC.clear()}
@@ -59,7 +71,7 @@ else if(fps>50&&(OPT.qs||0)>0&&t>qLock){if(++qGood>=3){qGood=0;qUp=t;setQ((OPT.q
 document.addEventListener('visibilitychange',()=>{qWin=[0,0];qPause=performance.now()+2500});
 /* Redimensionnement : le terrain en cache ne dépend pas de la taille de l’écran, on le garde ;
    on ne touche au canvas que si sa taille change vraiment (la barre d’adresse mobile envoie des « resize » en rafale) */
-function resize(){D=Math.max(1,Math.min(DMAX,devicePixelRatio||1));const w=Math.round(innerWidth*D),h=Math.round(innerHeight*D);if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}}
+function resize(){D=Math.max(1,Math.min(DMAX,devicePixelRatio||1));const w=Math.round(innerWidth*D),h=Math.round(innerHeight*D);if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}if(GLR)GLR.resize(w,h)}
 (()=>{const c=document.createElement('canvas');c.width=c.height=96;const g=c.getContext('2d'),im=g.createImageData(96,96);for(let i=0;i<im.data.length;i+=4){const v=Math.random()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=Math.random()*16}g.putImageData(im,0,0);document.documentElement.style.setProperty('--noise',`url(${c.toDataURL()})`)})();
 applyLang();$('hrv').innerHTML=RIVET;addEventListener('resize',resize);resize();resetState();newWorld();ui();
 let lt=performance.now(),fc=0,goHome=false,camGoal=null;
@@ -74,14 +86,14 @@ $('optb').onclick=()=>{tool=null;dis=false;openSheet('opt')};
 $('hb').onclick=()=>{goHome=true;SFX.tab();vib(8)};
 let lastDraw=0;function frame(t){const dt=Math.min(100,t-lt);lt=t;time=t;if(!menu&&!paused&&!document.hidden)st.play=(st.play||0)+dt/1000;
 /* Qualité adaptative par paliers : d'abord les effets, puis la résolution (jamais d'un coup) */
-qStep(t,dt);
+if((OPT.qm||'auto')=='auto')rsStep(t,dt);else qStep(t,dt);
 if(menu){cam.x=Math.cos(t/9000)*260;cam.y=Math.sin(t/7000)*200;cam.z=.8}
 else if(!paused){acc+=dt*spd;gt+=dt*spd;let n=0;const ts=performance.now();while(acc>=TM&&n++<8){acc-=TM;tick()}if(n)pfSim(performance.now()-ts,Math.min(n,8));if(acc>TM)acc=TM}
 setMoney(money);fxStep(dt);weather(dt);fc++;const every=!sheet||sheet=='i'||sheet=='info'?1:sheet=='t'?1e9:3;
 /* plafond : 60 i/s (les écrans 90/120 Hz dessinaient 2× trop) ; 30 i/s en Économie, ou au palier bas quand rien ne bouge */
 if(FLING&&!P){cam.x+=FLING.vx*dt/cam.z;cam.y+=FLING.vy*dt/cam.z;const fk=Math.exp(-dt/320);FLING.vx*=fk;FLING.vy*=fk;if(Math.hypot(FLING.vx,FLING.vy)<.03)FLING=null}
 const moving=!!P||!!FLING||camGoal||time-zMoveT<400,cap=OPT.qm=='eco'&&!moving?32:15.5;const due=t-lastDraw>=cap;
-if(due&&!PFX.skip&&(fc%every==0||P&&sheet!='t')){lastDraw=t;const td=performance.now();draw(Math.min(1,acc/TM));drawRain();drawEvent();drawPings();drawSP();pfDraw(performance.now()-td)}if(sheet=='map'){mmStep();if(fc%2==0)drawMap()}
+if(due&&!PFX.skip&&(fc%every==0||P&&sheet!='t')){lastDraw=t;const td=performance.now();if(cx.beginFrame)cx.beginFrame();draw(Math.min(1,acc/TM));drawRain();drawEvent();drawPings();drawSP();if(cx.endFrame)cx.endFrame();pfDraw(performance.now()-td)}if(sheet=='map'){mmStep();if(fc%2==0)drawMap()}
 if(camGoal&&!menu){cam.x+=(camGoal.x-cam.x)*.18;cam.y+=(camGoal.y-cam.y)*.18;if(Math.hypot(camGoal.x-cam.x,camGoal.y-cam.y)<1)camGoal=null}
 if(goHome&&!menu){cam.x+=(0-cam.x)*.14;cam.y+=(0-cam.y)*.14;if(Math.hypot(cam.x,cam.y)<4)goHome=false}
 pfFrame(t,dt);if(fc%15==0){const far=!menu&&!sheet&&!tool&&!dis&&Math.hypot(cam.x,cam.y)>TS*14;$('hb').hidden=!far}requestAnimationFrame(frame)}

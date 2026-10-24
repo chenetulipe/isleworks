@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Saira+Stencil+One&family=Share+Tech+Mono&display=swap">
-<link rel="stylesheet" href="style.css?v=3.2.2">
+<link rel="stylesheet" href="style.css?v=4.0.0">
 </head>
 <body class="menu">
 <canvas id="c"></canvas>
@@ -32,20 +32,21 @@
 <button class="big" id="crb" style="margin-top:10px">Crédits</button><div id="cred" class="plate" hidden></div><button class="big" id="hw" style="margin-top:10px">Comment jouer</button>
 <div id="how" class="plate" hidden><b>1.</b> Ouvre <b>Construire</b> et pose un extracteur sur un gisement.<br><b>2.</b> Glisse le doigt depuis l’extracteur : les tapis se posent tout seuls.<br><b>3.</b> Fonderie, puis terminal de vente : l’argent tombe.<br><b>4.</b> Achète les parcelles en pointillés : le monde est infini, les ressources rares sont au loin.<br><b>Gestes :</b> un doigt déplace, deux doigts zooment, appui long = menu rapide, double tap = copier.</div></div></div>
 
-<script src="00-data.js?v=3.2.2"></script>
-<script src="01-world.js?v=3.2.2"></script>
-<script src="02-sim.js?v=3.2.2"></script>
-<script src="03-icons.js?v=3.2.2"></script>
-<script src="04-render.js?v=3.2.2"></script>
-<script src="05-fx.js?v=3.2.2"></script>
-<script src="06-ui.js?v=3.2.2"></script>
-<script src="07-quests.js?v=3.2.2"></script>
-<script src="076-mascot.js?v=3.2.2"></script>
-<script src="08-input.js?v=3.2.2"></script>
-<script src="085-i18n.js?v=3.2.2"></script>
-<script src="087-perf.js?v=3.2.2"></script>
-<script src="088-save.js?v=3.2.2"></script>
-<script src="09-main.js?v=3.2.2"></script>
+<script src="00-data.js?v=4.0.0"></script>
+<script src="01-world.js?v=4.0.0"></script>
+<script src="02-sim.js?v=4.0.0"></script>
+<script src="03-icons.js?v=4.0.0"></script>
+<script src="036-gl.js?v=4.0.0"></script>
+<script src="04-render.js?v=4.0.0"></script>
+<script src="05-fx.js?v=4.0.0"></script>
+<script src="06-ui.js?v=4.0.0"></script>
+<script src="07-quests.js?v=4.0.0"></script>
+<script src="076-mascot.js?v=4.0.0"></script>
+<script src="08-input.js?v=4.0.0"></script>
+<script src="085-i18n.js?v=4.0.0"></script>
+<script src="087-perf.js?v=4.0.0"></script>
+<script src="088-save.js?v=4.0.0"></script>
+<script src="09-main.js?v=4.0.0"></script>
 <script>
 /* Mise en cache du jeu : lancement instantané et jeu hors ligne (uniquement quand le jeu est en ligne) */
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));

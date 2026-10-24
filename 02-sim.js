@@ -1,7 +1,7 @@
 /* =====================================================================
    ÉTAT DE LA PARTIE
    ===================================================================== */
-const $=id=>document.getElementById(id),cv=$('c');/* let : le rendu peut dessiner temporairement dans un autre canvas (cache des bâtiments) */let cx=cv.getContext('2d',{alpha:false});
+const $=id=>document.getElementById(id),cv=$('c');/* let : le rendu peut dessiner temporairement dans un autre canvas (cache des bâtiments) */let cx=cv.getContext('2d');
 let D=Math.max(1,Math.min(2,devicePixelRatio||1));
 const OPT=Object.assign({vib:true,night:true,deco:true,fx:true,music:true,tips:true},JSON.parse(localStorage.getItem('ficsit-opt')||'{}'));
 const saveOpt=()=>{try{localStorage.setItem('ficsit-opt',JSON.stringify(OPT))}catch(e){}};
