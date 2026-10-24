@@ -18,8 +18,8 @@ const SZ=t=>BD[t]&&BD[t].sz||1;
 /* Cases occupées par un bâtiment (2×2 pour les grosses machines, ancrées en haut à gauche) */
 const bsz=b=>b.small?1:SZ(b.t);
 function tilesOf(t,x,y,s0){const s=s0||SZ(t),r=[];for(let j=0;j<s;j++)for(let i=0;i<s;i++)r.push([x+i,y+j]);return r}
-function regB(b){for(const c of tilesOf(b.t,b.x,b.y,bsz(b)))BL.set(tk(c[0],c[1]),b)}
-function unregB(b){for(const c of tilesOf(b.t,b.x,b.y,bsz(b)))if(BL.get(tk(c[0],c[1]))===b)BL.delete(tk(c[0],c[1]))}
+function regB(b){bDirty=1;for(const c of tilesOf(b.t,b.x,b.y,bsz(b)))BL.set(tk(c[0],c[1]),b)}
+function unregB(b){bDirty=1;for(const c of tilesOf(b.t,b.x,b.y,bsz(b)))if(BL.get(tk(c[0],c[1]))===b)BL.delete(tk(c[0],c[1]))}
 /* Cases juste devant le bâtiment (2 pour une machine 2×2) */
 function fronts(b,d){if(d==null)d=b.d;const s=bsz(b);if(s<2)return[[b.x+DX[d],b.y+DY[d]]];const x=b.x,y=b.y,r=[];for(let i=0;i<s;i++)r.push(d==0?[x+i,y-1]:d==1?[x+s,y+i]:d==2?[x+i,y+s]:[x-1,y+i]);return r}
 const fr=b=>fronts(b)[0];
@@ -70,8 +70,10 @@ case'gen_steam':if(it=='water'){if((t.wat||0)>=20)return false;t.wat=(t.wat||0)+
 case'gen_bio':case'gen_coal':case'gen_fuel':case'reactor':{if(!GEN[t.t].f[it]||(t.fq||(t.fq=[])).length>=6)return false;t.fq.push(it);return true}
 case'solarp':return false;
 case'crate':case'silo':if(t.tot>=BD[t.t].cap)return false;t.st2[it]=(t.st2[it]||0)+1;t.tot++;return true;
+/* Pad : un objet commandé compte pour la commande ; tout le reste est vendu normalement (le tapis ne se bloque jamais) */
+case'pad':{const c=t.ct;if(c&&c.item==it&&c.got<c.n){c.got++;sbA(it,'s',1);if(c.got>=c.n)ctDone(c,true);return true}}
 case'seller':{const sd=(sx>t.x?1:sx<t.x?3:sy>t.y?2:0);if(!t.lsd)t.lsd=[-1,-1,-1,-1];if(t.lsd[sd]===tk_)return false;t.lsd[sd]=tk_;const v=pr(it)*(nearT(t,'golden',2)?1.2:1);money+=v;st.earned+=v;onSale(t);sales.push([gt,v]);sold[it]++;sbA(it,'s',1);m[it]=Math.max(.2,m[it]*.982);return true}
-case'pad':{const c=t.ct;if(!c||c.item!=it||c.got>=c.n)return false;c.got++;sbA(it,'s',1);if(c.got>=c.n)ctDone(c,true);return true}}
+}
 if(!t.rec&&BD[t.t].m){/* machine neuve : on choisit la recette la plus simple qui utilise cet objet */const c=Object.keys(R).filter(k=>R[k].m==BD[t.t].m&&U.r.has(k)&&R[k].in[it]).sort((a,b)=>Object.keys(R[a].in).length-Object.keys(R[b].in).length);
 if(c.length){t.rec=c[0];toast('Recette choisie : '+IT[R[c[0]].out][0]+' (touche la machine pour changer)','ok');rivet('Une machine choisit sa recette toute seule selon ce qui arrive. Touche-la pour en changer, et n’oublie pas de relier sa sortie (flèche orange).','autorec')}}
 const r=R[t.rec],n=r&&r.in[it];if(!n||(t.buf[it]||0)>=n*2)return false;t.buf[it]=(t.buf[it]||0)+1;return true}
@@ -110,7 +112,7 @@ const feeds=(n,b)=>outsTo(n,b);
 function beltShape(b){const bk=at([b.x-DX[b.d],b.y-DY[b.d]]),r=at([b.x+DX[(b.d+1)%4],b.y+DY[(b.d+1)%4]]),l=at([b.x+DX[(b.d+3)%4],b.y+DY[(b.d+3)%4]]);
 const fb=feeds(bk,b),fr2=feeds(r,b),fl=feeds(l,b);b.cv=!fb&&fr2!=fl?(fr2?1:-1):0}
 let CARRL=[];function beltOrder(){CARRL=L.filter(b=>CARRY[b.t]||b.t=='crossing');const bs=L.filter(b=>BELTS[b.t]),dist=new Map();for(const b of bs)b.bm=0;for(const m0 of L)if(m0.t=='beltmotor')for(let j=-3;j<=3;j++)for(let i=-3;i<=3;i++){const n=at([m0.x+i,m0.y+j]);if(n&&BELTS[n.t])n.bm=1}bs.forEach(beltShape);const dd=b=>{if(dist.has(b))return dist.get(b);dist.set(b,0);const n=at(fr(b));const v=n&&BELTS[n.t]?1+dd(n):0;dist.set(b,v);return v};bs.forEach(dd);BORD_=bs.sort((a,b)=>dist.get(a)-dist.get(b));bDirty=0}
-function beltsTick(){if(bDirty||tk_%10==0)beltOrder();for(const b of BORD_)if(b.q)for(const e of b.q){if(e.t===tk_)continue;e.pp=e.p;const w=beltPos(b,e.p,e.p0);e.ox=w[0];e.oy=w[1]}
+function beltsTick(){if(bDirty||tk_%240==0)beltOrder();for(const b of BORD_)if(b.q)for(const e of b.q){if(e.t===tk_)continue;e.pp=e.p;const w=beltPos(b,e.p,e.p0);e.ox=w[0];e.oy=w[1]}
 for(let s=0;s<3;s++)for(const b of BORD_){const bm=b.bm?1.5:1;if(s==0)beltStep(b,(b.t=='conveyor'||b.t=='bridge'?BSP[b.t]:.335)*bm);else if(s==1&&(b.t=='belt2'||b.t=='belt3')||s==2&&b.t=='belt3')beltStep(b,.335*bm)}}
 const beltCount=b=>b.q?b.q.length:0,STORE=nz({silo:1,crate:1});
 function beacons(b){let n=0;const s=bsz(b);for(let j=-1;j<=s;j++)for(let i=-1;i<=s;i++){if(i>=0&&j>=0&&i<s&&j<s)continue;const t=BL.get(tk(b.x+i,b.y+j));if(t&&t.t=='beacon')n++}return Math.min(2,n)}
@@ -179,10 +181,11 @@ if(sheet=='i')updInsp();else if(sheet=='m'&&tk_%4==0){if(mtab=='p')renderSheet()
 /* Commandes de vaisseaux */
 function ctDone(c,ok){const p=c.pad;if(ok){money+=c.reward;st.earned+=c.reward;st.delivered++;SFX.shipOk();coin(p,6);toast('Commande livrée : +'+c.reward.toLocaleString(LOC)+' $','ok');fl.push({x:p.x*TS+16,y:p.y*TS,t:time,s:'+'+c.reward+' $'});vib([20,40,20])}
 else{toast('Le vaisseau est reparti sans sa commande');SFX.shipKo()}p.ct=null;p.leave=time;CT.splice(CT.indexOf(c),1);ctUI()}
-function ctTick(){for(const c of CT.slice()){if(at([c.pad.x,c.pad.y])!==c.pad)CT.splice(CT.indexOf(c),1);else if(tk_-c.t0>c.dur)ctDone(c,false)}
+/* plus de délai : le vaisseau attend que la commande soit complète */
+function ctTick(){for(const c of CT.slice()){if(at([c.pad.x,c.pad.y])!==c.pad)CT.splice(CT.indexOf(c),1)}
 if(tk_%60==0&&CT.length<3){const pads=L.filter(b=>b.t=='pad'&&!b.ct);if(pads.length){const q=new Set();for(const x of L){if(BD[x.t].rt&&okRes(x))q.add(RN[Rs(x.x,x.y)]);if(BD[x.t].m&&R[x.rec])q.add(R[x.rec].out)}
 const pool=q.size?[...q]:['iron_ingot','copper_ingot'],it=pool[Math.random()*pool.length|0],base=IT[it][1],n=Math.max(3,Math.round((120+Math.random()*100)/Math.sqrt(base)/2.2)),pd=pads[Math.random()*pads.length|0],
-c={item:it,n,got:0,t0:tk_,dur:200+n*6,reward:Math.round(base*n*1.5*(1+.05*(st.art+RELN))),pad:pd,born:time};pd.ct=c;CT.push(c);SFX.ship();toast('Un vaisseau demande '+n+' × '+IT[it][0])}}ctUI()}
+c={item:it,n,got:0,t0:tk_,dur:200+n*6,reward:Math.round(base*n*2.5*(1+.05*(st.art+RELN))),pad:pd,born:time};pd.ct=c;CT.push(c);SFX.ship();toast('Un vaisseau demande '+n+' × '+IT[it][0])}}ctUI()}
 /* =====================================================================
    ACTIONS DU JOUEUR
    ===================================================================== */

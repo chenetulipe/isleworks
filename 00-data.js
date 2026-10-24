@@ -73,7 +73,7 @@ accu:{n:'Batterie de stockage',cost:450,d:'Garde le surplus d’énergie et le r
 wpump:{n:'Pompe à eau',cost:150,d:'Au bord de l’eau ou sur une rivière : 60 eaux par minute.'},
 gen_steam:{n:'Centrale à vapeur',cost:900,d:'Charbon + eau → 70 MW. Bien plus puissante qu’une centrale à charbon.',sz:2},
 dronest:{n:'Station de drones',cost:1200,d:'En mode Envoi, ses drones portent les objets reçus à la station Réception la plus proche, sans tapis.'},
-pad:{n:'Pad de livraison',cost:60,d:'Les vaisseaux y déposent leurs commandes.'},
+pad:{n:'Pad de livraison',cost:60,d:'Vend tout ce qu’on lui apporte. Des vaisseaux y passent aussi des commandes, payées bien plus cher, sans limite de temps.'},
 rcore:{n:'Cœur de réacteur',cost:0,inv:1,sz:2,d:'Machine unique : 40 MW gratuits, sans carburant ni câble.'},
 xdrill:{n:'Foreuse ancienne',cost:0,inv:1,d:'Machine unique : les extracteurs à 2 cases ou moins vont 50 % plus vite.'},
 orbital:{n:'Panneau orbital',cost:0,inv:1,d:'Machine unique : 25 MW jour et nuit, sans rien consommer.'},

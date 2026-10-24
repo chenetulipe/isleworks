@@ -373,7 +373,7 @@ cx.globalAlpha=.6;if(!d.plat)drawB(mk(tool,hx,hy,dir));cx.globalAlpha=1;cx.fillS
 nightPass(vis,x0,x1,y0,y1);
 drawPT();if(!menu){drawFog(px0,px1,py0,py1,z);drawSpot(z);drawHand(z)}
 for(let i=fl.length-1;i>=0;i--){const f=fl[i],a=(time-f.t)/1000;if(a>1.2){fl.splice(i,1);continue}cx.globalAlpha=Math.max(0,1-a/1.2);cx.fillStyle='#FA9549';cx.font='16px Share Tech Mono,monospace';cx.textAlign='center';cx.fillText(f.s,f.x,f.y-a*30);cx.globalAlpha=1}
-{const zm=time-zMoveT<350,mv=(typeof P!='undefined'&&P&&P.mv)||(typeof camGoal!='undefined'&&camGoal)||(typeof goHome!='undefined'&&goHome),el=performance.now()-FT0;
+{const zm=time-zMoveT<350,mv=(typeof P!='undefined'&&P&&P.mv)||(typeof FLING!='undefined'&&FLING)||(typeof camGoal!='undefined'&&camGoal)||(typeof goHome!='undefined'&&goHome),el=performance.now()-FT0;
 /* pendant un geste : peu de travail de fond par image (fluidité d’abord) ; au repos : on rattrape */
 rbRun(zm?1.5:mv?Math.max(1.5,6-el):Math.max(2,10-el));if(!zm)blRun(mv?Math.max(1,8-(performance.now()-FT0)):Math.max(1.5,12-(performance.now()-FT0)))}}
 /* Main du tutoriel : montre le geste à faire (glisser, ou toucher) */

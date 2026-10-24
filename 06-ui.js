@@ -164,7 +164,7 @@ case'imp':$('iox').innerHTML=`<div class="hint" style="margin:8px 0 4px">Colle i
 case'impf':IsleSave.loadFromFile().then(t=>{const ta=$('ioc');if(ta)ta.value=t;doImport(t)}).catch(()=>{});return;
 case'impgo':doImport($('ioc').value);return;
 case'damhere':{if(!U.b.has('dam'))return toast('Recherche « Hydroélectricité » requise','bad');const p=selInfo;closeSheet();setTool('dam');place(p.x,p.y,'dam');return}case'redo':redo();return;case'undo':undo();return;case'buildhere':{const r=Rs(selInfo.x,selInfo.y),t=bestExt(r);if(!t)return toast('Débloque d’abord l’extracteur adapté','bad');const p=selInfo;closeSheet();setTool(t);place(p.x,p.y,t);return}case'x2':closeSheet();return;case'buy':buyP(selP);return;case'dig':digPOI(selPOI);return;case'bpsel':tool=null;dis=false;bpMode='sel';closeSheet();ui();return;case'bppaste':tool=null;dis=false;bpMode='paste';closeSheet();ui();return;case'bprot':bpRotate();return;case'bpgo':bpPaste();return;
-case'x':tool=null;dis=false;cfg=null;bpMode=null;break;case'rot':dir=(dir+1)%4;SFX.rot();break;case'rotb':if(sel)sel.d=(sel.d+1)%4;SFX.rot();break;case'lvl':if(sel)levelUp(sel);return;
+case'x':tool=null;dis=false;cfg=null;bpMode=null;break;case'rot':dir=(dir+1)%4;SFX.rot();break;case'rotb':if(sel){sel.d=(sel.d+1)%4;bDirty=1}SFX.rot();break;case'lvl':if(sel)levelUp(sel);return;
 case'copy':if(sel)pipette(sel);return;case'del':if(sel)erase(sel.x,sel.y);return;case'up':if(sel)upgrade(sel);return;case'empty':if(sel){sel.st2={};sel.tot=0}break;
 case'home':cam.x=cam.y=0;cam.z=1;closeSheet();break;case'all':cam.x=cam.y=0;cam.z=.3;closeSheet();break}ui()});
 $('shx').onclick=()=>closeSheet();
@@ -173,7 +173,7 @@ document.addEventListener('pointerdown',e=>{const c=e.target.closest('#mapc');if
 
 
 /* Commandes de vaisseaux affichées en haut à gauche */
-let lastCT='';function ctUI(){const h=CT.map(c=>{const sec=Math.max(0,Math.round((c.dur-(tk_-c.t0))/2)),f=Math.max(0,1-(tk_-c.t0)/c.dur);return`<div class="cc plate"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="#0b0c0a" stroke="#000" stroke-width="5"/><circle cx="18" cy="18" r="15" fill="none" stroke="${f<.25?'#ff6259':'#ffd34d'}" stroke-width="4" stroke-dasharray="94.2" stroke-dashoffset="${(94.2*(1-f)).toFixed(1)}" transform="rotate(-90 18 18)" stroke-linecap="round"/><image href="${icu(c.item)}" x="8" y="8" width="20" height="20"/></svg><div class="ct"><b>${IT[c.item][0]}</b><span class="m" style="color:var(--mu)">${c.got}/${c.n} · ${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}</span></div><div class="cr">+${c.reward.toLocaleString(LOC)}<br>$</div></div>`}).join('');if(h!=lastCT){$('ctp').innerHTML=h;lastCT=h}}
+let lastCT='';function ctUI(){const h=CT.map(c=>{const f=c.n?c.got/c.n:0;return`<div class="cc plate"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="#0b0c0a" stroke="#000" stroke-width="5"/><circle cx="18" cy="18" r="15" fill="none" stroke="#ffd34d" stroke-width="4" stroke-dasharray="94.2" stroke-dashoffset="${(94.2*(1-f)).toFixed(1)}" transform="rotate(-90 18 18)" stroke-linecap="round"/><image href="${icu(c.item)}" x="8" y="8" width="20" height="20"/></svg><div class="ct"><b>${IT[c.item][0]}</b><span class="m" style="color:var(--mu)">${c.got}/${c.n}</span></div><div class="cr">+${c.reward.toLocaleString(LOC)}<br>$</div></div>`}).join('');if(h!=lastCT){$('ctp').innerHTML=h;lastCT=h}}
 
 /* Panneau du bas : on le tire par sa poignée (ou son titre) pour le fermer */
 (()=>{const sh=$('sh'),hh=$('shh');let y0=null,dy=0;

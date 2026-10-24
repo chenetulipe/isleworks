@@ -44,11 +44,13 @@ const[c,g]=done?[1,1]:qp(q),f=Math.min(1,c/g);
 const h=`<div class="qpill${qOpen?' open':''}"><svg class="qr" viewBox="0 0 36 36"><circle cx="18" cy="18" r="14" fill="none" stroke="#2b262022" stroke-width="4"/><circle cx="18" cy="18" r="14" fill="none" stroke="#f07a28" stroke-width="4" stroke-linecap="round" stroke-dasharray="88" stroke-dashoffset="${(88*(1-f)).toFixed(1)}" transform="rotate(-90 18 18)"/><text x="18" y="22.5" text-anchor="middle">${i+1}</text></svg><div class="qtx"><b>${q.t}</b>${q.p&&!done?`<span class="m">${Math.min(c,g).toLocaleString(LOC)}/${g.toLocaleString(LOC)}</span>`:''}${qOpen?`<small>${q.h}</small>`:''}</div><span class="qrw m">+${q.r.toLocaleString(LOC)}$</span>${done?'<div class="stamp">FAIT</div>':''}</div>`;
 if(h!=lastQ){e.innerHTML=h;lastQ=h}}
 function qTick(){if(!Q[qi]&&qi>=NQ0){if(st.chal&&Q.length==NQ0)Q.push(mkChal(st.chal));else nextChal()}const q=Q[qi];if(!q)return;const[c,g]=qp(q);if(c>=g){money+=q.r;st.earned+=q.r;toast('Objectif terminé : +'+q.r.toLocaleString(LOC)+' $','ok');SFX.quest();vib([20,40,30]);qShow={i:qi,u:time+1400};if(q.ch){st.chal=null;Q.length=NQ0;nextChal();qShow=null;qi=NQ0}else qi++;if(qi==NQ0&&!st.won){st.won=1;setTimeout(showWin,1800)}qOpen=false;confetti();save();if(Q[qi]&&qi<16)setTimeout(()=>rivet(Q[qi].h,'q'+qi),1600)}refreshQ();qHL()}
-function qHL(){document.querySelectorAll('.hl').forEach(e=>e.classList.remove('hl'));const q=Q[qi];if(!q||menu||(q.need&&!q.need()))return;
+/* surbrillance du tutoriel : on ne touche aux classes que si la cible change (évite un recalcul de page à chaque tick) */
+let QHL=[];function qHL(){const T=[];qHL0(T);if(T.length==QHL.length&&T.every((e,i)=>e===QHL[i]&&e.classList.contains('hl')))return;for(const e of QHL)if(!T.includes(e))e.classList.remove('hl');for(const e of T)e.classList.add('hl');QHL=T}
+function qHL0(T){const q=Q[qi];if(!q||menu||(q.need&&!q.need()))return;
 if(q.card&&tool==q.card)return;if(q.card&&L.some(b=>b.t==q.card)&&q.card!='seller'&&q.card!='smelter')return;if(q.card=='smelter'&&L.some(b=>b.t=='smelter'))return;
-if(q.dock&&sheet!=q.dock&&!tool){const b=document.querySelector(`#dock [data-s="${q.dock}"]`);if(b)b.classList.add('hl')}
-if(sheet=='b'&&q.card){if(cat!=q.cat){const t=document.querySelector(`#shb [data-c="${q.cat}"]`);if(t)t.classList.add('hl')}else{const c=document.querySelector(`#shb .pc[data-k="${q.card}"]`);if(c)c.classList.add('hl')}}
-if(sheet=='t'&&q.dock=='t'){const b=document.querySelector('#shb .hold')||document.querySelector('#bi .hx.s-av .hxw');if(b)b.classList.add('hl')}}
+if(q.dock&&sheet!=q.dock&&!tool){const b=document.querySelector(`#dock [data-s="${q.dock}"]`);if(b)T.push(b)}
+if(sheet=='b'&&q.card){if(cat!=q.cat){const t=document.querySelector(`#shb [data-c="${q.cat}"]`);if(t)T.push(t)}else{const c=document.querySelector(`#shb .pc[data-k="${q.card}"]`);if(c)T.push(c)}}
+if(sheet=='t'&&q.dock=='t'){const b=document.querySelector('#shb .hold')||document.querySelector('#bi .hx.s-av .hxw');if(b)T.push(b)}}
 $('qp').onclick=()=>{qOpen=!qOpen;lastQ='';refreshQ();SFX.tab();if(OPT.tips&&Q[qi])rivetAgain(Q[qi].h)};
 
 /* =====================================================================

@@ -5,7 +5,11 @@
    Appui long sur une case vide : menu rapide. Double tap : copier.
    ===================================================================== */
 let P=null,LP=null,GRB=null,grabFx=null,dbl=null,pd=0,pm=null;const ptrs=new Map();
-const cell=e=>{const r=cv.getBoundingClientRect();return[Math.floor(((e.clientX-r.left-r.width/2)/cam.z+cam.x)/TS),Math.floor(((e.clientY-r.top-r.height/2)/cam.z+cam.y)/TS)]};
+/* position du canvas mémorisée : la relire à chaque mouvement de doigt forçait un recalcul de la page */
+let CVR=null;const cvRect=()=>CVR||(CVR=cv.getBoundingClientRect());addEventListener('resize',()=>CVR=null);addEventListener('orientationchange',()=>CVR=null);
+/* élan : après un glissement rapide, la carte continue sur sa lancée puis ralentit */
+let FLING=null;
+const cell=e=>{const r=cvRect();return[Math.floor(((e.clientX-r.left-r.width/2)/cam.z+cam.x)/TS),Math.floor(((e.clientY-r.top-r.height/2)/cam.z+cam.y)/TS)]};
 const dirTo=(a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1];return Math.abs(dx)>=Math.abs(dy)?(dx>0?1:3):(dy>0?2:0)};
 let lastBelt='conveyor';
 function sstep(f,t,d){
@@ -25,7 +29,7 @@ it.forEach((k,i)=>{const a=-Math.PI/2+i*2*Math.PI/it.length;h+=`<div class="ri p
 const R0=$('rad');R0.style.setProperty('--x',X+'px');R0.style.setProperty('--y',Y+'px');R0.innerHTML=h;R0.hidden=false;SFX.radOpen();P.rad={x:X,y:Y,it,c,i:-1};vib(15)}
 function radMove(e){const r=P.rad,dx=e.clientX-r.x,dy=e.clientY-r.y,n=r.it.length;let i=-1;if(Math.hypot(dx,dy)>38){const a=(Math.atan2(dy,dx)+Math.PI/2+2*Math.PI)%(2*Math.PI);i=Math.round(a/(2*Math.PI/n))%n}
 if(i!=r.i){r.i=i;[...$('rad').querySelectorAll('.ri')].forEach((el,k)=>el.classList.toggle('on',k==i));if(i>=0){vib(5);SFX.radHover(i)}}}
-cv.addEventListener('pointerdown',e=>{ptrs.set(e.pointerId,[e.clientX,e.clientY]);try{cv.setPointerCapture(e.pointerId)}catch(_){}if(menu)return;
+cv.addEventListener('pointerdown',e=>{FLING=null;ptrs.set(e.pointerId,[e.clientX,e.clientY]);try{cv.setPointerCapture(e.pointerId)}catch(_){}if(menu)return;
 if(ptrs.size>=2){clearTimeout(LP);$('rad').hidden=true;P=null;hv=null;const[a,b]=[...ptrs.values()];pd=Math.hypot(a[0]-b[0],a[1]-b[1]);pm=[(a[0]+b[0])/2,(a[1]+b[1])/2];return}
 ugid++;const c=cell(e),b0=at(c);P={x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,mv:false,c,last:null,stop:0,src:null,rad:null,placed:new Set(),grab:false};
 const endBelt=b0&&isBelt(b0.t)&&!at(fr(b0));
@@ -38,7 +42,7 @@ if(bpMode=='sel'){P.bp=c;P.src=null;P.grab=false;clearTimeout(GRB)}
 if(dis)LP=setTimeout(()=>{if(P&&!P.mv&&ptrs.size<2){P.box=P.c;P.boxEnd=P.c;vib(18);SFX.tab()}},380);
 if(!tool&&!dis&&!b0&&land(c)&&owned(c[0],c[1])&&!poiAt(c[0],c[1]))LP=setTimeout(()=>{if(P&&!P.mv&&ptrs.size<2)radOpen(P.sx,P.sy,c)},420)});
 cv.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,[e.clientX,e.clientY]);if(menu)return;
-if(ptrs.size>=2){const[a,b]=[...ptrs.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]),mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2,r=cv.getBoundingClientRect(),cx0=r.left+r.width/2,cy0=r.top+r.height/2;
+if(ptrs.size>=2){const[a,b]=[...ptrs.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]),mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2,r=cvRect(),cx0=r.left+r.width/2,cy0=r.top+r.height/2;
 /* Zoom ancré entre les deux doigts : le point sous les doigts reste sous les doigts */
 const wx=cam.x+(pm[0]-cx0)/cam.z,wy=cam.y+(pm[1]-cy0)/cam.z;if(pd)cam.z=Math.max(.15,Math.min(3,cam.z*d/pd));cam.x=wx-(mx-cx0)/cam.z;cam.y=wy-(my-cy0)/cam.z;camGoal=null;pd=d;pm=[mx,my];return}
 if(!P)return;if(P.rad){radMove(e);return}
@@ -50,8 +54,10 @@ if(P.box){P.boxEnd=c;return}
 if(dis){if(!P.last||c[0]!=P.last[0]||c[1]!=P.last[1]){erase(c[0],c[1]);P.last=c}return}
 if(isBelt(tool)||P.src){if(!P.last){if(P.src)P.last=[P.src.x,P.src.y];else{if(!at(P.c)){dir=dirTo(P.c,c);place(P.c[0],P.c[1],tool)}P.last=P.c}}
 if(c[0]!=P.last[0]||c[1]!=P.last[1])walk(c);hv=null;return}
-cam.x-=dx/cam.z;cam.y-=dy/cam.z;camGoal=null;if(tool)hv=null});
-function up(e){ptrs.delete(e.pointerId);clearTimeout(LP);clearTimeout(GRB);grabFx=null;if(menu)return;
+cam.x-=dx/cam.z;cam.y-=dy/cam.z;camGoal=null;if(tool)hv=null;
+const now=performance.now(),dtm=Math.max(1,now-(P.lt||now-16));P.lt=now;const k=Math.min(1,dtm/40);P.vx=(P.vx||0)*(1-k)+(-dx/dtm)*k;P.vy=(P.vy||0)*(1-k)+(-dy/dtm)*k});
+function up(e){if(P&&P.mv&&P.lt&&!P.src&&!P.bp&&!P.box&&!P.rad&&!dis&&!isBelt(tool)&&ptrs.size<=1&&performance.now()-P.lt<70){const sp=Math.hypot(P.vx||0,P.vy||0),mx=3.5,f=sp>mx?mx/sp:1;if(sp>.25)FLING={vx:P.vx*f,vy:P.vy*f}}
+ptrs.delete(e.pointerId);clearTimeout(LP);clearTimeout(GRB);grabFx=null;if(menu)return;
 if(ptrs.size>0){P=null;return}if(!P){hv=null;return}
 if(P.bp){if(P.bpEnd)bpCapture(P.bp,P.bpEnd);P=null;hv=null;return}
 if(P.box){const a0=P.box,a1=P.boxEnd,x0=Math.min(a0[0],a1[0]),x1=Math.max(a0[0],a1[0]),y0=Math.min(a0[1],a1[1]),y1=Math.max(a0[1],a1[1]),seen=new Set();let n=0;
