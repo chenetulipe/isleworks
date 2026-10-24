@@ -56,10 +56,10 @@ supercomp:rc('manufacturer',{computer:2,quartz_crystal:4,cable_g:6},'supercomp',
 satellite:rc('manufacturer',{supercomp:1,heavy_frame:2,battery:4},'satellite',22),cargo:rc('manufacturer',{engine:2,satellite:1,heavy_frame:4},'cargo',30)};
 /* Bâtiments. rt = cadence d'extraction (ticks par objet), m = type de machine de production */
 const BD=nz({conveyor:{n:'Tapis',cost:5,d:'120 objets/min, 3 par case. Glisse le doigt pour tracer.'},split2:{n:'Répartiteur double',cost:20,d:'Partage la ligne en deux : à gauche et à droite.'},splitter:{n:'Répartiteur triple',cost:25,d:'Partage la ligne en trois : devant, à gauche et à droite.'},osplit:{n:'Répartiteur prioritaire',cost:40,d:'Tout droit en priorité ; le surplus part sur les côtés.'},bridge:{n:'Pont',cost:30,d:'Tapis qui traverse l’eau, sans plateforme.'},platform:{n:'Plateforme',cost:80,d:'Fondation posée sur l’eau : on peut construire dessus.',plat:1},
-belt2:{n:'Tapis rapide',cost:20,d:'Deux fois plus rapide : 240 objets/min.'},belt3:{n:'Tapis express',cost:40,d:'Trois fois plus rapide : 360 objets/min.'},sorter:{n:'Trieur',cost:120,d:'L’objet choisi sort à gauche, le reste tout droit.'},tunnel:{n:'Tunnel',cost:60,d:'Passe sous 1 à 4 cases jusqu’au tunnel suivant dans le même sens.'},crossing:{n:'Croisement',cost:50,d:'Deux lignes se croisent sans se mélanger.'},
+belt2:{n:'Tapis rapide',cost:20,d:'Deux fois plus rapide : 240 objets/min.'},belt3:{n:'Tapis express',cost:40,d:'Trois fois plus rapide : 360 objets/min.'},sorter:{n:'Trieur',cost:120,d:'L’objet choisi sort à gauche, le reste tout droit.'},sorter2:{n:'Trieur double',cost:200,d:'Deux filtres : le 1er objet sort à gauche, le 2e à droite, le reste tout droit.'},valve:{n:'Vanne',cost:30,d:'Ouvre ou ferme une ligne d’une simple touche, sans rien démonter.'},limiter:{n:'Limiteur de débit',cost:80,d:'Laisse passer au maximum 10 à 120 objets par minute (réglable).'},tunnel:{n:'Tunnel',cost:60,d:'Passe sous 1 à 4 cases jusqu’au tunnel suivant dans le même sens.'},crossing:{n:'Croisement',cost:50,d:'Deux lignes se croisent sans se mélanger.'},
 silo:{n:'Silo',cost:100,d:'Stocke 100 objets et les ressort.',cap:100},crate:{n:'Conteneur',cost:300,d:'Stocke 500 objets et les ressort.',cap:500},beacon:{n:'Balise de surcharge',cost:1500,d:'+25 % de vitesse aux machines autour (3×3).'},sink:{n:'Broyeur',cost:200,d:'Détruit tout : 50 % de la valeur, sans faire baisser les prix.'},
 ext1:{n:'Extracteur Mk1',cost:40,d:'Lent : 30 objets/min.',rt:4,c:'#c89b3c'},ext2:{n:'Extracteur Mk2',cost:150,d:'60 objets/min.',rt:2,c:'#6fb7e8'},ext3:{n:'Extracteur Mk3',cost:500,d:'120 objets/min.',rt:1,c:'#c77dff'},
-pump:{n:'Pompe à pétrole',cost:400,d:'Se pose sur une nappe de pétrole.',rt:3,c:'#e0802a',oil:1},
+pump:{n:'Pompe à pétrole',cost:400,d:'Se pose sur une nappe de pétrole.',rt:3,c:'#e0802a',oil:1},oilsand:{n:'Foreuse à sables bitumineux',cost:500,d:'Se pose sur n’importe quel sable : extrait un peu de pétrole (15/min), bien moins qu’une vraie nappe.',rt:8,c:'#c9a35a',sand:1},
 smelter:{n:'Fonderie',cost:80,m:'smelter',d:'Fond minerais, sable, argile et calcaire.'},crusher:{n:'Concasseur',cost:140,m:'crusher',d:'Broie pierre, quartz et bauxite.'},
 blast:{n:'Haut-fourneau',cost:400,m:'blast',d:'Alliages à deux entrées : acier, alu.',sz:2},refinery:{n:'Raffinerie',cost:900,m:'refinery',d:'Pétrole → plastique, caoutchouc, carburant.',sz:2},
 constructor:{n:'Constructeur',cost:120,m:'constructor',d:'1 entrée → 1 pièce.'},assembler:{n:'Assembleuse',cost:240,m:'assembler',d:'2 ou 3 entrées → 1 produit. Consomme 6 MW.',sz:2},
@@ -75,7 +75,7 @@ gen_steam:{n:'Centrale à vapeur',cost:900,d:'Charbon + eau → 70 MW. Bien plus
 dronest:{n:'Station de drones',cost:1200,d:'En mode Envoi, ses drones portent les objets reçus à la station Réception la plus proche, sans tapis.'},
 pad:{n:'Pad de livraison',cost:60,d:'Vend tout ce qu’on lui apporte. Des vaisseaux y passent aussi des commandes, payées bien plus cher, sans limite de temps.'},
 rcore:{n:'Cœur de réacteur',cost:0,inv:1,sz:2,d:'Machine unique : 40 MW gratuits, sans carburant ni câble.'},
-xdrill:{n:'Foreuse ancienne',cost:0,inv:1,d:'Machine unique : les extracteurs à 2 cases ou moins vont 50 % plus vite.'},
+xdrill:{n:'Foreuse ancienne',cost:0,inv:1,d:'Machine unique : les extracteurs à 2 cases ou moins et les puits fossiles autour vont 50 % plus vite.'},
 orbital:{n:'Panneau orbital',cost:0,inv:1,d:'Machine unique : 25 MW jour et nuit, sans rien consommer.'},
 cryo:{n:'Radiateur cryogénique',cost:0,inv:1,d:'Machine unique : les centrales à 2 cases ou moins produisent 30 % de plus.'},
 golden:{n:'Presse dorée',cost:0,inv:1,d:'Machine unique : les terminaux de vente à 2 cases ou moins vendent 20 % plus cher.'},
@@ -86,8 +86,8 @@ well:{n:'Puits fossile',cost:0,inv:1,d:'Machine unique : produit 30 pétroles br
 vault:{n:'Coffre des anciens',cost:0,inv:1,d:'Machine unique : chaque minute, ton argent rapporte 0,4 % d’intérêts (2 000 $ au plus).'},
 beltmotor:{n:'Moteur de tapis',cost:0,inv:1,d:'Machine unique : les tapis à 3 cases ou moins vont 50 % plus vite.'},
 relic:{n:'Relique',cost:0,inv:1,d:'Machine unique : +5 % sur toutes tes ventes et commandes tant qu’elle est posée.'}});
-const CATS=nz({Extraction:['ext1','ext2','ext3','pump','greenhouse','wpump'],Transformation:['smelter','crusher','blast','refinery','arc','centrifuge','recycler'],Fabrication:['constructor','assembler','chemlab','manufacturer','cleanroom','beacon'],Logistique:['conveyor','belt2','belt3','bridge','platform','split2','splitter','osplit','sorter','tunnel','crossing','silo','crate','dronest'],Vente:['seller','pad','sink'],Trouvailles:['rcore','xdrill','relic','orbital','cryo','golden','antenna','statue','clock','well','vault','beltmotor'],Énergie:['wind','dam','gen_bio','gen_coal','solarp','gen_fuel','reactor','gen_steam','accu']});
-const ORD=['conveyor','ext1','smelter','constructor','seller','pad','splitter','crusher','ext2','assembler','blast','silo','ext3','pump','refinery','chemlab','manufacturer','belt2','belt3','sorter','tunnel','crossing','crate','sink','arc','centrifuge','cleanroom','beacon','bridge','platform','wind','dam','gen_bio','gen_coal','solarp','gen_fuel','reactor'],NX=nz({ext1:'ext2',ext2:'ext3'});
+const CATS=nz({Extraction:['ext1','ext2','ext3','pump','oilsand','greenhouse','wpump'],Transformation:['smelter','crusher','blast','refinery','arc','centrifuge','recycler'],Fabrication:['constructor','assembler','chemlab','manufacturer','cleanroom','beacon'],Logistique:['conveyor','belt2','belt3','bridge','platform','split2','splitter','osplit','sorter','sorter2','valve','limiter','tunnel','crossing','silo','crate','dronest'],Vente:['seller','pad','sink'],Trouvailles:['rcore','xdrill','relic','orbital','cryo','golden','antenna','statue','clock','well','vault','beltmotor'],Énergie:['wind','dam','gen_bio','gen_coal','solarp','gen_fuel','reactor','gen_steam','accu']});
+const ORD=['conveyor','ext1','smelter','constructor','seller','pad','splitter','crusher','ext2','assembler','blast','silo','ext3','pump','refinery','chemlab','manufacturer','belt2','belt3','sorter','sorter2','valve','limiter','oilsand','tunnel','crossing','crate','sink','arc','centrifuge','cleanroom','beacon','bridge','platform','wind','dam','gen_bio','gen_coal','solarp','gen_fuel','reactor'],NX=nz({ext1:'ext2',ext2:'ext3'});
 /* Économie : les matières premières ne valent presque rien ; la valeur d'un objet est calculée
    à partir de ses ingrédients (×1,35) plus un bonus de temps de fabrication.
    Vendre du brut ne rapporte rien : il faut monter des chaînes longues pour gagner gros. */
@@ -100,7 +100,7 @@ const LVS=[1,1.5,2],MACH=Object.keys(BD).filter(k=>BD[k].m);
 /* Recherches */
 const tn=(id,n,cost,req,o)=>Object.assign({id,n,cost,req},o);
 const T=[
-tn('logi','Logistique',100,[],{b:['split2','splitter','silo'],d:'Répartiteur et silo.'}),
+tn('logi','Logistique',100,[],{b:['split2','splitter','silo','valve'],d:'Répartiteur, silo et vanne.'}),
 tn('forge','Façonnage',150,[],{b:['constructor'],r:['plate','rod','gear'],d:'Constructeur : plaques, tiges, engrenages.'}),
 tn('mason','Maçonnerie',200,[],{r:['brick','plank'],d:'Briques d’argile et planches.'}),
 tn('glassn','Verrerie',250,['mason'],{r:['glass'],d:'Fondre le sable en verre.'}),
@@ -123,7 +123,7 @@ tn('steam','Vapeur',1300,['elec'],{b:['wpump','gen_steam'],d:'Pompe à eau et ce
 tn('dronelog','Logistique par drones',5000,['comp'],{b:['dronest'],d:'Stations de drones : transport sans tapis.'}),
 tn('belt3','Tapis express',3200,['belt2','steelw'],{b:['belt3'],d:'Tapis trois fois plus rapides (360/min).'}),
 tn('belt2','Tapis rapides',700,['asm'],{b:['belt2'],d:'Tapis deux fois plus rapides (240/min).'}),
-tn('sorter','Tri intelligent',900,['asm','logi'],{b:['sorter','osplit'],d:'Trieur et répartiteur prioritaire.'}),
+tn('sorter','Tri intelligent',900,['asm','logi'],{b:['sorter','osplit','sorter2','limiter'],d:'Trieurs, répartiteur prioritaire et limiteur de débit.'}),
 tn('crate','Conteneurs',800,['logi','blast'],{b:['crate'],d:'Stockage de 500 objets.'}),
 tn('circ','Électronique',900,['asm'],{r:['circuit'],d:'Circuits imprimés.'}),
 tn('elec','Électricité',500,['cable'],{b:['wind','gen_bio','gen_coal'],d:'Éoliennes et centrales : les machines avancées ont besoin de courant.'}),
@@ -139,7 +139,7 @@ tn('mk3','Extracteur Mk3',1800,['mk2','blast'],{b:['ext3'],d:'Récolte quatre fo
 tn('stator','Électromagnétisme',1400,['steelw','circ'],{r:['stator','motor'],d:'Stators et moteurs.'}),
 tn('frame','Structures modulaires',2000,['steelw','asm'],{r:['frame'],d:'Cadres modulaires.'}),
 tn('alu','Aluminium',2500,['blast','crush'],{r:['alumina','aluingot','asheet'],d:'De la bauxite aux tôles d’alu.'}),
-tn('oil','Pétrochimie',2500,['steelw'],{b:['pump','refinery'],r:['plastic','rubber','fuel'],d:'Pompe et raffinerie.'}),
+tn('oil','Pétrochimie',2500,['steelw'],{b:['pump','refinery','oilsand'],r:['plastic','rubber','fuel'],d:'Pompe, foreuse à sables bitumineux et raffinerie.'}),
 tn('chem','Chimie',3000,['oil','quartz'],{b:['chemlab'],r:['acid','gunpow'],d:'Labo chimique : acide et poudre noire.'}),
 tn('comp','Informatique',3500,['circ','oil'],{r:['computer','cableg'],d:'Ordinateurs et câbles gainés.'}),
 tn('batt','Batteries',3500,['chem'],{r:['battery'],d:'Batteries à l’acide.'}),
@@ -164,7 +164,7 @@ tn('sat','Orbite',30000,['super','jet','batt'],{r:['satellite'],d:'Satellites.'}
 tn('cargo','Vaisseau de fret',60000,['sat'],{r:['cargo'],d:'Le chef-d’œuvre de ton île.'})];
 /* Énergie : consommation des machines avancées (MW) et production des centrales.
    Les machines de base restent mécaniques et ne consomment rien. */
-const PWR=nz({greenhouse:4,assembler:6,ext3:12,pump:14,blast:20,refinery:30,arc:45,centrifuge:60,cleanroom:80,manufacturer:70,chemlab:24,beacon:10});
+const PWR=nz({greenhouse:4,assembler:6,ext3:12,pump:14,oilsand:10,blast:20,refinery:30,arc:45,centrifuge:60,cleanroom:80,manufacturer:70,chemlab:24,beacon:10});
 const GEN=nz({gen_steam:{mw:70,f:{coal:8,charcoal:6},water:1},wind:{mw:11,wind:1},dam:{mw:40,dam:1},gen_bio:{mw:15,f:{wood:4,plank:6,charcoal:8}},gen_coal:{mw:45,f:{coal:8,charcoal:6}},solarp:{mw:12,sun:1},gen_fuel:{mw:150,f:{fuel:12}},reactor:{mw:1000,f:{fuel_rod:240}}});
 for(const t of T)t.cost=Math.round(t.cost*1.5/10)*10;
 const LED={g:'#4ade80',y:'#facc15',r:'#ef4444'},LT={g:'Opérationnel',y:'En attente',r:'Bloqué'};

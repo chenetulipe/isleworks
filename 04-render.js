@@ -152,7 +152,7 @@ let LODc=2;function lodPick(zd){const up=zd>2.4*1.08?8:zd>1.25*1.08?4:zd>.55*1.0
 function chev(y,col){const o=(time/500%1)*4;cx.strokeStyle=col;cx.lineWidth=3;cx.beginPath();cx.moveTo(-8,y+4-o);cx.lineTo(0,y-4-o);cx.lineTo(8,y+4-o);cx.stroke()}
 function ports(t,x,y,d){if(BD[t].inv)return;cx.save();cx.translate(x*TS+16,y*TS+16);cx.rotate(d*Math.PI/2);if(t!='seller'&&t!='pad'&&t!='sink'&&t!='beacon')chev(-TS/2+3,'#4ade80');if(t=='sorter'){cx.save();cx.rotate(-Math.PI/2);chev(-TS/2+3,'#ffd34d');cx.restore()}if(!BD[t].rt&&t!='beacon')chev(TS/2-1,'#FA9549');cx.restore()}
 function ship(x,y,s){cx.save();cx.translate(x,y);cx.scale(s,s);cx.fillStyle='#c9d3de';cx.beginPath();cx.moveTo(0,-13);cx.lineTo(8,8);cx.lineTo(0,4);cx.lineTo(-8,8);cx.closePath();cx.fill();cx.fillStyle='#FA9549';cx.beginPath();cx.moveTo(-3,6);cx.lineTo(0,12+Math.random()*4);cx.lineTo(3,6);cx.fill();cx.restore()}
-const ROT=nz({crossing:1,split2:1,splitter:1,osplit:1,sorter:1,tunnel:1}),NOLED=nz({accu:1,dronest:1,wpump:1,seller:1,pad:1,split2:1,splitter:1,osplit:1,sorter:1,tunnel:1,crossing:1,sink:1,beacon:1,rcore:1,xdrill:1,relic:1,orbital:1,cryo:1,golden:1,antenna:1,statue:1,clock:1,well:1,vault:1,beltmotor:1});
+const ROT=nz({crossing:1,split2:1,splitter:1,osplit:1,sorter:1,sorter2:1,valve:1,limiter:1,tunnel:1}),NOLED=nz({accu:1,dronest:1,wpump:1,seller:1,pad:1,split2:1,splitter:1,osplit:1,sorter:1,sorter2:1,valve:1,limiter:1,tunnel:1,crossing:1,sink:1,beacon:1,rcore:1,xdrill:1,relic:1,orbital:1,cryo:1,golden:1,antenna:1,statue:1,clock:1,well:1,vault:1,beltmotor:1});
 const BSP_=Object.create(null);
 const BSPN=Object.create(null);
 let ANF=null,SPB=6,LIVEB=40;function bSprite(t,d,cv,tier,fr){tier=tier||2;const n=BSPN[t]||(BSPN[t]=[]),i=((d*3+(cv||0)+1)*8+tier)*4+(fr||0);let c=n[i];if(c)return c;const k=t+d+'_'+(cv||0)+'_'+tier+'_'+(fr||0);c=BSP_[k];if(c)return n[i]=c;
@@ -167,6 +167,8 @@ const act=b.busy||GEN[b.t]&&b.mw>0&&!GEN[b.t].wind||BD[b.t].rt&&b.out&&b.out.len
 const sp=bSprite(b.t,b.d,0,tier);if(b.busy&&BD[b.t].m&&!BCR){const s=1+.03*Math.sin(time/110+b.x*1.7);cx.drawImage(sp,X+16-16*s,Y+16-16*s*1.02,TS*s,TS*s*1.02)}else cx.drawImage(sp,X,Y,TS,TS);
 if(b.t=='wind')windRotor(cx,X+16,Y+5,b.mw?time/(130-b.mw*4):0,1);
 if(b.t=='sorter'&&b.flt)dot(b.flt,X+24,Y+24);
+if(b.t=='sorter2'){if(b.flt)dot(b.flt,X+8,Y+24);if(b.flt2)dot(b.flt2,X+24,Y+24)}
+if(b.t=='valve'&&b.off){cx.fillStyle='#ef4444';if(b.d%2)cx.fillRect(X+13.5,Y+5,5,22);else cx.fillRect(X+5,Y+13.5,22,5)}
 if(STORE[b.t]&&b.tot){const f=Math.min(1,b.tot/BD[b.t].cap);cx.fillStyle='#14171c';cx.fillRect(X+5,Y+TS-8,TS-10,4);cx.fillStyle=f>.9?'#ff6259':'#ffd34d';cx.fillRect(X+5,Y+TS-8,(TS-10)*f,4)}
 if(!NOLED[b.t]&&ZSG>=.6&&!BCR){const s=status(b);cx.fillStyle=LED[s];cx.fillRect(X+TS-10,Y+6,5,5)}
 if((BD[b.t].m||BD[b.t].rt||STORE[b.t]||b.t=='well')&&ZSG>=1.1&&!b._bg2){cx.save();cx.translate(X+16,Y+16);cx.rotate(b.d*Math.PI/2);cx.fillStyle='#FA9549';cx.beginPath();cx.moveTo(0,-17);cx.lineTo(4.5,-12.5);cx.lineTo(-4.5,-12.5);cx.closePath();cx.fill();cx.restore()}
@@ -185,7 +187,15 @@ g.strokeStyle='rgba(250,149,73,.6)';g.lineWidth=1.5;for(const x of[-14,14]){g.be
 g.fillStyle='rgba(0,0,0,.35)';g.fillRect(-15,-17,31,34);g.fillStyle='#2f353f';g.fillRect(-13,-17,26,34);g.fillStyle='#5d6676';g.fillRect(-10,-17,20,34);
 g.fillStyle='#8a93a3';g.fillRect(-13,-17,2,34);g.fillRect(11,-17,2,34);g.fillStyle='#ffd34d';g.fillRect(-13,-6,2,12);g.fillRect(11,-6,2,12);
 g.strokeStyle='#f2ead9';g.lineWidth=2;for(const y of[-9,5]){g.beginPath();g.moveTo(-4,y+3);g.lineTo(0,y-1);g.lineTo(4,y+3);g.stroke()}}
-function splitBelt(g,t,f){if(t=='split2'){g.fillStyle='#262b33';g.fillRect(-13,-2,26,19);g.fillRect(-17,-13,34,26);g.fillStyle='#454d5a';g.fillRect(-10,0,20,17);g.fillRect(-17,-10,34,20);g.fillStyle='#6b7484';g.fillRect(-13,13,2,4);g.fillRect(11,13,2,4);g.fillRect(-17,-13,34,2);
+/* Trieur double, vanne, limiteur : même châssis que les répartiteurs */
+function splitBelt2(g,t){const two=t=='sorter2';g.fillStyle='#262b33';g.fillRect(-13,-17,26,34);if(two)g.fillRect(-17,-13,34,26);g.fillStyle='#454d5a';g.fillRect(-10,-17,20,34);if(two)g.fillRect(-17,-10,34,20);
+g.fillStyle='#6b7484';g.fillRect(-13,-17,2,4);g.fillRect(11,-17,2,4);g.fillRect(-13,13,2,4);g.fillRect(11,13,2,4);
+const ch=(x,y,a,c)=>{g.save();g.translate(x,y);g.rotate(a);g.strokeStyle=c;g.lineWidth=2.2;g.beginPath();g.moveTo(-4,2);g.lineTo(0,-2);g.lineTo(4,2);g.stroke();g.restore()};
+if(t=='valve'){g.fillStyle='#8b93a1';g.fillRect(-16,-4,5,8);g.fillRect(11,-4,5,8);g.fillStyle='#2b3039';g.fillRect(-11,-1.5,22,3);ch(0,-12,0,'#f2ead9');return}
+g.fillStyle='#1c2027';g.beginPath();g.arc(0,0,7,0,7);g.fill();g.strokeStyle=two?'#ffd34d':'#79e3ff';g.lineWidth=2;g.beginPath();g.arc(0,0,7,0,7);g.stroke();ch(0,-12,0,'#f2ead9');
+if(two){ch(-12,0,-Math.PI/2,'#ffd34d');ch(12,0,Math.PI/2,'#79e3ff');g.fillStyle='#f2ead9';g.font='bold 8px sans-serif';g.textAlign='center';g.fillText('2',0,3);return}
+g.fillStyle='#79e3ff';g.beginPath();g.moveTo(-3.5,-4);g.lineTo(3.5,-4);g.lineTo(0,0);g.lineTo(3.5,4);g.lineTo(-3.5,4);g.lineTo(0,0);g.closePath();g.fill()}
+function splitBelt(g,t,f){if(t=='sorter2'||t=='valve'||t=='limiter')return splitBelt2(g,t);if(t=='split2'){g.fillStyle='#262b33';g.fillRect(-13,-2,26,19);g.fillRect(-17,-13,34,26);g.fillStyle='#454d5a';g.fillRect(-10,0,20,17);g.fillRect(-17,-10,34,20);g.fillStyle='#6b7484';g.fillRect(-13,13,2,4);g.fillRect(11,13,2,4);g.fillRect(-17,-13,34,2);
 g.fillStyle='#1c2027';g.beginPath();g.arc(0,0,7,0,7);g.fill();g.strokeStyle='#FA9549';g.lineWidth=2;g.beginPath();g.arc(0,0,7,0,7);g.stroke();
 for(const s of[-1,1]){g.save();g.translate(s*12,0);g.rotate(s*Math.PI/2);g.strokeStyle='#f2ead9';g.lineWidth=2.2;g.beginPath();g.moveTo(-4,2);g.lineTo(0,-2);g.lineTo(4,2);g.stroke();g.restore()}g.fillStyle='#f2ead9';g.font='bold 8px sans-serif';g.textAlign='center';g.fillText('2',0,3);return}
 if(t=='splitter'){g.save();}const band=f?'#5a3a3a':'#454d5a',fr='#262b33';g.fillStyle=fr;g.fillRect(-13,-17,26,34);g.fillRect(-17,-13,t=='sorter'?30:34,26);
@@ -196,7 +206,7 @@ if(t=='osplit'){g.fillStyle='#f2ead9';g.beginPath();g.moveTo(0,-16);g.lineTo(6,-
 ch(0,-12,0,'#f2ead9');ch(-12,0,-Math.PI/2,t=='sorter'?'#ffd34d':'#f2ead9');if(t!='sorter')ch(12,0,Math.PI/2,'#f2ead9');if(t=='splitter'){g.fillStyle='#f2ead9';g.font='bold 8px sans-serif';g.textAlign='center';g.fillText('3',0,3);g.restore()}}
 function drawBbody(b,cx,stat0){const x=b.x*TS,y=b.y*TS,px=x+16,py=y+16,t=b.t,s=stat0?'y':status(b);
 if(t=='crossing'){cx.save();cx.translate(px,py);cx.rotate(b.d*Math.PI/2);crossBelt(cx);cx.restore();return}
-if(t=='split2'||t=='splitter'||t=='osplit'||t=='sorter'){cx.save();cx.translate(px,py);cx.rotate(b.d*Math.PI/2);splitBelt(cx,t,false);cx.restore();return}
+if(t=='split2'||t=='splitter'||t=='osplit'||t=='sorter'||t=='sorter2'||t=='valve'||t=='limiter'){cx.save();cx.translate(px,py);cx.rotate(b.d*Math.PI/2);splitBelt(cx,t,false);if(t=='valve'&&b.off){cx.fillStyle='#ef4444';cx.fillRect(-11,-2.5,22,5)}cx.restore();return}
 if(isBelt(t)){const f=t=='belt2',f3=t=='belt3';cx.save();cx.translate(px,py);cx.rotate(b.d*Math.PI/2);if(b.cv&&t!='bridge'){curveBelt(cx,b.cv,f3?3:f,true);cx.restore();return}if(t=='bridge'){cx.fillStyle='rgba(0,0,0,.3)';cx.fillRect(-14,-14,30,32);cx.fillStyle='#5a3a1f';cx.fillRect(-16,-16.5,5,33);cx.fillRect(11,-16.5,5,33);cx.fillStyle='#a8763f';for(let k=0;k<4;k++){cx.fillRect(-16,-14+k*8,5,2);cx.fillRect(11,-14+k*8,5,2)}}
 else{cx.fillStyle='#262b33';cx.fillRect(-13,-17,26,34)}
 cx.fillStyle=f3?'#2f5560':f?'#5a3a3a':'#454d5a';cx.fillRect(-10,-17,20,34);
@@ -313,7 +323,7 @@ if(ZSG>=1||L.length<120){if(plan)planBatch(cx,vis);else{for(const b of vis)drawB
 blFrame++;const s=bsOf(ZSG),mode=(plan?'p':'s')+s,BX0=Math.floor((x0-3)/BB),BX1=Math.floor((x1+1)/BB),BY0=Math.floor((y0-3)/BB),BY1=Math.floor((y1+1)/BB),W=BX1-BX0+1,H=BY1-BY0+1;
 const sig=new Int32Array(W*H),lists=new Array(W*H),live=[];
 for(const b of L){const bx=Math.floor(b.x/BB)-BX0,by=Math.floor(b.y/BB)-BY0;if(bx<0||by<0||bx>=W||by>=H)continue;if(bLive(b)){live.push(b);continue}const i=by*W+bx;
-sig[i]=(Math.imul(sig[i],31)+thash(b.t)+Math.imul(b.x,73856093)+Math.imul(b.y,19349663)+b.d*7+(b.lv||1)*131+(b.cv||0)*1009)|0;(lists[i]||(lists[i]=[])).push(b)}
+sig[i]=(Math.imul(sig[i],31)+thash(b.t)+Math.imul(b.x,73856093)+Math.imul(b.y,19349663)+b.d*7+(b.lv||1)*131+(b.cv||0)*1009+(b.off?7777:0)+(b.flt?thash(b.flt):0)+(b.flt2?thash(b.flt2)*3:0))|0;(lists[i]||(lists[i]=[])).push(b)}
 const cxw=(cam.x/TS-BB/2)/BB,cyw=(cam.y/TS-BB/2)/BB,ready=new Uint8Array(W*H),liveB=[];let syncN=2;
 for(let by=0;by<H;by++)for(let bx=0;bx<W;bx++){const i=by*W+bx,lst=lists[i];if(!lst){ready[i]=1;continue}const key=(BX0+bx)*1e6+(BY0+by)*100+mode.length*10+(s*8|0)+(plan?50:0),e=BLC.get(key);
 if(e&&e.sig===sig[i]){BLC.delete(key);BLC.set(key,e);ready[i]=1;cx.drawImage(e.c,((BX0+bx)*BB-1)*TS,((BY0+by)*BB-1)*TS,(BB+4)*TS,(BB+4)*TS);continue}
@@ -371,7 +381,7 @@ if(rgB){const r=RANGE[rgB.t],s=bsz(rgB),x0=(rgB.x-r)*TS,y0=(rgB.y-r)*TS,w=(s+2*r
 const tg={beltmotor:b=>BELTS[b.t],xdrill:b=>BD[b.t].rt,cryo:b=>GEN[b.t],golden:b=>b.t=='seller',antenna:b=>BD[b.t].m,beacon:b=>BD[b.t].m}[rgB.t];if(tg)for(const b of L){if(b===rgB||!tg(b))continue;const bs=bsz(b);if(b.x+bs-1>=rgB.x-r&&b.x<=rgB.x+s-1+r&&b.y+bs-1>=rgB.y-r&&b.y<=rgB.y+s-1+r){cx.strokeStyle='#7dff6a';cx.lineWidth=2/z;cx.strokeRect(b.x*TS+3,b.y*TS+3,bs*TS-6,bs*TS-6)}}}
 if(grabFx){const gs=bsz(grabFx),pu=2+Math.sin(time/80)*1.5;cx.strokeStyle='#4ade80';cx.lineWidth=3/z;cx.strokeRect(grabFx.x*TS-pu,grabFx.y*TS-pu,TS*gs+pu*2,TS*gs+pu*2)}
 if(sel){const ss=bsz(sel);cx.strokeStyle='#FA9549';cx.lineWidth=3/z;cx.strokeRect(sel.x*TS+1,sel.y*TS+1,TS*ss-2,TS*ss-2);if(!isBelt(sel.t)){if(bsz(sel)>1)bigPorts(sel);else ports(sel.t,sel.x,sel.y,sel.d)}}
-if(hv&&tool){const so=SZ(tool),oo=Math.floor((so-1)/2),hx=hv[0]-oo,hy=hv[1]-oo,rr=Rs(hx,hy),d=BD[tool],wet=!Bi(hx,hy)&&!PLAT.has(tk(hx,hy)),ok=(so<2?!BL.has(tk(hx,hy))&&owned(hx,hy):tilesOf(tool,hx,hy).every(c=>!BL.has(tk(c[0],c[1]))&&owned(c[0],c[1])&&(Bi(c[0],c[1])||PLAT.has(tk(c[0],c[1])))))&&(tool=='dam'?isRiver(hx,hy):d.plat?wet:wet?tool=='bridge':(d.oil?rr=='oil':!d.rt||(rr&&rr!='oil'&&(rr!='gold'||U.x.has('gold')))));
+if(hv&&tool){const so=SZ(tool),oo=Math.floor((so-1)/2),hx=hv[0]-oo,hy=hv[1]-oo,rr=Rs(hx,hy),d=BD[tool],wet=!Bi(hx,hy)&&!PLAT.has(tk(hx,hy)),ok=(so<2?!BL.has(tk(hx,hy))&&owned(hx,hy):tilesOf(tool,hx,hy).every(c=>!BL.has(tk(c[0],c[1]))&&owned(c[0],c[1])&&(Bi(c[0],c[1])||PLAT.has(tk(c[0],c[1])))))&&(tool=='dam'?isRiver(hx,hy):d.plat?wet:wet?tool=='bridge':(d.sand?Bi(hx,hy)==3&&(!rr||rr=='sand'):d.oil?rr=='oil':!d.rt||(rr&&rr!='oil'&&(rr!='gold'||U.x.has('gold')))));
 cx.globalAlpha=.6;if(!d.plat)drawB(mk(tool,hx,hy,dir));cx.globalAlpha=1;cx.fillStyle=ok?'rgba(46,230,255,.3)':'rgba(239,68,68,.45)';cx.fillRect(hx*TS,hy*TS,TS*so,TS*so);if(so<2)ports(tool,hx,hy,dir);else bigPorts(mk(tool,hx,hy,dir))}
 nightPass(vis,x0,x1,y0,y1);
 drawPT();if(!menu){drawFog(px0,px1,py0,py1,z);drawSpot(z);drawHand(z)}

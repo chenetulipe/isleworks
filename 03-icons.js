@@ -154,7 +154,7 @@ else if(t=='pad'){g.strokeStyle='#facc15';g.lineWidth=1.5;g.strokeRect(-10,-10,2
 function bIcon(k){const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');g.translate(32,32);g.scale(1.8,1.8);g.lineJoin='round';
 g.fillStyle='#2b3039';g.beginPath();g.roundRect(-15,-15,30,30,6);g.fill();g.strokeStyle='#ffffff30';g.lineWidth=.8;g.stroke();
 if(k=='bridge'){g.fillStyle='#3b78b8';g.fillRect(-15,-15,30,30);g.fillStyle='#5a3a1f';g.fillRect(-14,-15,4,30);g.fillRect(10,-15,4,30)}
-if(k=='crossing'){crossBelt(g)}else if(k=='split2'||k=='splitter'||k=='osplit'||k=='sorter'){splitBelt(g,k,false)}else if(isBelt(k)){g.fillStyle=k=='belt3'?'#2f5560':k=='belt2'?'#5a3a3a':'#454d5a';g.fillRect(-11,-15,22,30);g.strokeStyle='#FA9549';g.lineWidth=2;for(const y of[4,-5]){g.beginPath();g.moveTo(-5,y+3);g.lineTo(0,y-2);g.lineTo(5,y+3);g.stroke()}}else bodyB(g,k,null,false);
+if(k=='crossing'){crossBelt(g)}else if(k=='split2'||k=='splitter'||k=='osplit'||k=='sorter'||k=='sorter2'||k=='valve'||k=='limiter'){splitBelt(g,k,false)}else if(isBelt(k)){g.fillStyle=k=='belt3'?'#2f5560':k=='belt2'?'#5a3a3a':'#454d5a';g.fillRect(-11,-15,22,30);g.strokeStyle='#FA9549';g.lineWidth=2;for(const y of[4,-5]){g.beginPath();g.moveTo(-5,y+3);g.lineTo(0,y-2);g.lineTo(5,y+3);g.stroke()}}else bodyB(g,k,null,false);
 return c.toDataURL()}
 const bicu=k=>BIC[k]||(BIC[k]=bIcon(k));
 const bimg=k=>`<img class="bi" alt="" src="${bicu(k)}">`;

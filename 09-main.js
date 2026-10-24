@@ -4,7 +4,7 @@
    ===================================================================== */
 const SK='ficsit-usine-v4',SV=4;let offGain=0,offMin=0;
 function save(){if(menu)return false;try{const prev=localStorage.getItem(SK);if(prev)localStorage.setItem(SK+'-bak',prev);localStorage.setItem(SK,JSON.stringify({v:SV,seed:SEED,wv:WV,inv:INV,bp:BP,ct:CT.map(c=>({x:c.pad.x,y:c.pad.y,item:c.item,n:c.n,got:c.got,left:c.dur-(tk_-c.t0),dur:c.dur,reward:c.reward})),ev:EV,evn:evNext,diff,money,gt,tk:tk_,dir,own:[...OWN],found:[...FOUND],plat:[...PLAT],
-L:L.map(b=>[b.t,b.x,b.y,b.d,b.rec,b.lv,b.tot,b.st2,b.out,b.buf,b.flt||0,b.fq||0,b.q&&b.q.length?b.q.map(e=>[e.it,Math.round(e.p*100)]):0,b.mode||b.ch||b.wat||b.dq||b.rq?{m:b.mode,c:Math.round(b.ch||0),w:b.wat||0,dq:b.dq||0,rq:b.rq||0}:0]),u:[...U.b],ur:[...U.r],ux:[...U.x],ut:[...U.t],m,sold,recent,st,qi,cfgMem,ach:[...ACHD],tips:[...seenTips],ts:Date.now(),rate:REV,cam:[cam.x,cam.y,cam.z]}));return true}catch(e){return false}}
+L:L.map(b=>[b.t,b.x,b.y,b.d,b.rec,b.lv,b.tot,b.st2,b.out,b.buf,b.flt||0,b.fq||0,b.q&&b.q.length?b.q.map(e=>[e.it,Math.round(e.p*100)]):0,b.mode||b.ch||b.wat||b.dq||b.rq||b.flt2||b.off||b.lim?{m:b.mode,c:Math.round(b.ch||0),w:b.wat||0,dq:b.dq||0,rq:b.rq||0,f2:b.flt2||0,off:b.off?1:0,lim:b.lim||0}:0]),u:[...U.b],ur:[...U.r],ux:[...U.x],ut:[...U.t],m,sold,recent,st,qi,cfgMem,ach:[...ACHD],tips:[...seenTips],ts:Date.now(),rate:REV,cam:[cam.x,cam.y,cam.z]}));return true}catch(e){return false}}
 function readSave(){for(const k of[SK,SK+'-bak']){try{const s=JSON.parse(localStorage.getItem(k)||'null');if(s&&s.v==SV&&Array.isArray(s.L))return s}catch(e){}}return null}
 async function exportSave(){save();const j=localStorage.getItem(SK);if(!j)throw new Error('Aucune partie à exporter');return IsleSave.encode(JSON.parse(j))}
 async function importSave(code){let s;try{s=await IsleSave.decode(code)}catch(e){return(e&&e.message)||'Code invalide'}
@@ -14,9 +14,9 @@ let lastCode='';
 function doImport(t){importSave(t).then(r=>{if(r===true){closeSheet();toast('Partie importée','ok')}else toast(r||'Code invalide','bad')})}
 function load(){const s=readSave();if(!s)return false;resetState();SEED=s.seed;WV=s.wv||1;CT.length=0;EV=s.ev&&EVD[s.ev.k]?s.ev:null;evNext=s.evn||300000;BP=s.bp&&s.bp.items?s.bp:null;bpMode=null;for(const k in ZK)delete ZK[k];INV=Object.assign(INV0(),s.inv||{});for(const k in INV)if(INV[k]>0)U.b.add(k);diff=DIF[s.diff]?s.diff:'std';CHK.clear();DEP.clear();RBC.clear();OWN.clear();FOUND.clear();
 s.own.forEach(k=>OWN.add(k));(s.found||[]).forEach(k=>FOUND.add(k));PLAT.clear();(s.plat||[]).forEach(k=>PLAT.add(k));money=s.money;gt=s.gt||0;tk_=s.tk||0;dir=s.dir||1;
-U.b=new Set(s.u);U.r=new Set(s.ur);U.x=new Set(s.ux);U.t=new Set(s.ut);for(const k in IT){if(s.m&&s.m[k]!=null)m[k]=s.m[k];if(s.sold&&s.sold[k]!=null)sold[k]=s.sold[k]}
+U.b=new Set(s.u);U.r=new Set(s.ur);U.x=new Set(s.ux);U.t=new Set(s.ut);/* bâtiments ajoutés après coup à une recherche déjà faite */for(const n of T)if(U.t.has(n.id))(n.b||[]).forEach(k=>U.b.add(k));for(const k in IT){if(s.m&&s.m[k]!=null)m[k]=s.m[k];if(s.sold&&s.sold[k]!=null)sold[k]=s.sold[k]}
 recent=(s.recent||[]).filter(k=>BD[k]);Object.assign(st,s.st||{});qi=s.qi||0;Q.length=NQ0;if(st.chal)Q.push(mkChal(st.chal));for(const k in s.cfgMem||{})if(R[s.cfgMem[k]]||k=='sorterF')cfgMem[k]=s.cfgMem[k];ACHD.clear();(s.ach||[]).forEach(k=>ACHD.add(k));seenTips.clear();(s.tips||[]).forEach(k=>seenTips.add(k));
-for(const a of s.L){if(!BD[a[0]])continue;const b=mk(a[0],a[1],a[2],a[3]);b.rec=R[a[4]]?a[4]:null;b.lv=a[5]||1;b.tot=a[6]||0;b.st2=a[7]||{};b.out=a[8]||[];b.buf=a[9]||{};b.flt=a[10]||null;if(a[11])b.fq=a[11];if(a[13]){const x=a[13];if(x.m)b.mode=x.m;if(x.c)b.ch=x.c;if(x.w)b.wat=x.w;if(x.dq)b.dq=x.dq;if(x.rq)b.rq=x.rq}if(a[12])b.q=a[12].filter(e=>IT[e[0]]).map(e=>({it:e[0],p:e[1]/100,pp:e[1]/100,t:-9,from:null}));(tilesOf(b.t,b.x,b.y).some(c=>BL.has(tk(c[0],c[1])))&&(b.small=1),regB(b));L.push(b)}
+for(const a of s.L){if(!BD[a[0]])continue;const b=mk(a[0],a[1],a[2],a[3]);b.rec=R[a[4]]?a[4]:null;b.lv=a[5]||1;b.tot=a[6]||0;b.st2=a[7]||{};b.out=a[8]||[];b.buf=a[9]||{};b.flt=a[10]||null;if(a[11])b.fq=a[11];if(a[13]){const x=a[13];if(x.m)b.mode=x.m;if(x.c)b.ch=x.c;if(x.w)b.wat=x.w;if(x.dq)b.dq=x.dq;if(x.rq)b.rq=x.rq;if(x.f2)b.flt2=x.f2;if(x.off)b.off=1;if(x.lim)b.lim=x.lim}if(a[12])b.q=a[12].filter(e=>IT[e[0]]).map(e=>({it:e[0],p:e[1]/100,pp:e[1]/100,t:-9,from:null}));(tilesOf(b.t,b.x,b.y).some(c=>BL.has(tk(c[0],c[1])))&&(b.small=1),regB(b));L.push(b)}
 cam.x=s.cam[0];cam.y=s.cam[1];cam.z=s.cam[2];ctUI();
 /* Gains hors ligne : la moitié du revenu par minute, sur 2 heures au maximum */
 const away=s.ts?Math.min(120,(Date.now()-s.ts)/60000):0;offGain=away>1&&s.rate>0?Math.round(s.rate*away*.3):0;if(offGain){money+=offGain;offMin=Math.round(away)}for(const c of s.ct||[]){const pd=at([c.x,c.y]);if(!pd||pd.t!='pad'||pd.ct||!IT[c.item])continue;const o={item:c.item,n:c.n,got:c.got,t0:tk_-(c.dur-c.left),dur:c.dur,reward:c.reward,pad:pd,born:time-9000};pd.ct=o;CT.push(o)}for(const c of CT)c.t0-=Math.round(away*120);ctUI();return true}
@@ -53,9 +53,9 @@ function rsStep(t,dt){if((OPT.qm||'auto')!='auto'||menu||document.hidden||t<qPau
 const fps=rsWin[1]*1000/rsWin[0];rsWin=[0,0];if(t>rsCeilT)rsCeil=9;
 /* la baisse précédente n’a rien changé : c’est le téléphone qui plafonne, on remet la résolution et on n’y touche plus */
 if(rsChk){const c=rsChk;rsChk=null;if(fps<c.fps*1.1){rsNoHelp=true;rsSet(c.v);return}}
-if(fps<50&&DMAX>1&&!rsNoHelp){rsCeil=DMAX;rsCeilT=t+60000;rsGood=0;rsChk={fps,v:DMAX};rsSet(DMAX-(fps<38?.5:.25));return}
+if(fps<50&&DMAX>1&&!rsNoHelp){rsCeil=DMAX;rsCeilT=t+300000;rsGood=0;rsChk={fps,v:DMAX};rsSet(DMAX-(fps<38?.5:.25));return}
 if(fps<33&&DMAX<=1&&(OPT.fx||OPT.deco)&&++rsLow>=2){OPT.autoOff=true;OPT.fx=false;OPT.deco=false;RBC.clear();saveOpt();toast('Effets et décors coupés pour garder le jeu fluide');return}
-if(fps>=57&&DMAX<Math.min(2,devicePixelRatio||1)&&DMAX+.125<rsCeil){if(++rsGood>=3){rsGood=0;rsSet(DMAX+.125)}}else rsGood=0}
+if(fps>=57&&DMAX<Math.min(2,devicePixelRatio||1)&&DMAX+.125<rsCeil){if(++rsGood>=5){rsGood=0;rsSet(DMAX+.125)}}else rsGood=0}
 function setQ(n,why){n=Math.max(0,Math.min(3,n));const was=OPT.qs||0;if(n==was)return;OPT.qs=n;
 if(n>=1&&was<1&&(OPT.fx||OPT.deco)){OPT.autoOff=true;OPT.fx=false;OPT.deco=false;RBC.clear()}
 if(n==0&&OPT.autoOff){OPT.autoOff=false;OPT.fx=true;OPT.deco=true;RBC.clear()}
@@ -71,7 +71,9 @@ else if(fps>50&&(OPT.qs||0)>0&&t>qLock){if(++qGood>=3){qGood=0;qUp=t;setQ((OPT.q
 document.addEventListener('visibilitychange',()=>{qWin=[0,0];qPause=performance.now()+2500});
 /* Redimensionnement : le terrain en cache ne dépend pas de la taille de l’écran, on le garde ;
    on ne touche au canvas que si sa taille change vraiment (la barre d’adresse mobile envoie des « resize » en rafale) */
-function resize(){D=Math.max(1,Math.min(DMAX,devicePixelRatio||1));const w=Math.round(innerWidth*D),h=Math.round(innerHeight*D);if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}if(GLR)GLR.resize(w,h)}
+function resize(){D=Math.max(1,Math.min(DMAX,devicePixelRatio||1));const w=Math.round(innerWidth*D),h=Math.round(innerHeight*D);if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;if(GLR)GLR.resize(w,h);
+/* changer la taille efface l’image : on redessine tout de suite, sinon une image vide s’affiche (clignotement) */
+if(resize.ok){try{if(cx.beginFrame)cx.beginFrame();draw(Math.min(1,acc/TM));drawRain();drawEvent();drawPings();drawSP();if(cx.endFrame)cx.endFrame()}catch(e){}}}}
 (()=>{const c=document.createElement('canvas');c.width=c.height=96;const g=c.getContext('2d'),im=g.createImageData(96,96);for(let i=0;i<im.data.length;i+=4){const v=Math.random()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=Math.random()*16}g.putImageData(im,0,0);document.documentElement.style.setProperty('--noise',`url(${c.toDataURL()})`)})();
 applyLang();$('hrv').innerHTML=RIVET;addEventListener('resize',resize);resize();resetState();newWorld();ui();
 let lt=performance.now(),fc=0,goHome=false,camGoal=null;
@@ -84,7 +86,7 @@ function drawRain(){if(!rain||!OPT.fx)return;const w=innerWidth,h=innerHeight;cx
 const t=time/1000;for(let i=0;i<70;i++){const x=(hsh(i,1,9)*w+t*60)%w,y=(hsh(i,2,9)*h+t*(500+hsh(i,3,9)*300))%h;cx.moveTo(x,y);cx.lineTo(x-3,y+12)}cx.stroke()}
 $('optb').onclick=()=>{tool=null;dis=false;openSheet('opt')};
 $('hb').onclick=()=>{goHome=true;SFX.tab();vib(8)};
-let lastDraw=0;function frame(t){const dt=Math.min(100,t-lt);lt=t;time=t;if(!menu&&!paused&&!document.hidden)st.play=(st.play||0)+dt/1000;
+let lastDraw=0;function frame(t){resize.ok=true;const dt=Math.min(100,t-lt);lt=t;time=t;if(!menu&&!paused&&!document.hidden)st.play=(st.play||0)+dt/1000;
 /* Qualité adaptative par paliers : d'abord les effets, puis la résolution (jamais d'un coup) */
 if((OPT.qm||'auto')=='auto')rsStep(t,dt);else qStep(t,dt);
 if(menu){cam.x=Math.cos(t/9000)*260;cam.y=Math.sin(t/7000)*200;cam.z=.8}

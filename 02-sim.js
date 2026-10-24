@@ -60,7 +60,8 @@ const pr=k=>{const v=IT[k][1]*m[k]*(U.x.has('mkt')?1.1:1)*(1+.05*(st.art+RELN))*
 function accept(t,it,sx,sy){switch(t.t){
 case'conveyor':case'belt2':case'belt3':case'bridge':return beltIn(t,it,sx,sy);
 case'tunnel':{const f=fr(t);if(t.item||(f[0]==sx&&f[1]==sy))return false;t.item=it;t.st=tk_;t.from=[sx,sy];t.via=0;return true}
-case'split2':case'splitter':case'osplit':case'sorter':if(t.item)return false;t.item=it;t.st=tk_;t.from=[sx,sy];return true;
+case'valve':if(t.off)return false;
+case'split2':case'splitter':case'osplit':case'sorter':case'sorter2':case'limiter':if(t.item)return false;t.item=it;t.st=tk_;t.from=[sx,sy];return true;
 case'crossing':{const dx=t.x-sx,dy=t.y-sy,d=Math.abs(dx)>=Math.abs(dy)?(dx>0?1:3):(dy>0?2:0),ax=d%2;if(!t.cr)t.cr=[null,null];if(t.cr[ax])return false;t.cr[ax]={it,d,st:tk_,from:[sx,sy]};return true}
 case'sink':{const v=Math.max(1,Math.round(IT[it][1]*.5*(1+.05*(st.art+RELN))));money+=v;st.earned+=v;sales.push([gt,v]);sbA(it,'s',1);onSale(t);return true}
 case'beacon':return false;
@@ -83,10 +84,15 @@ function pushS(b,it){if(b.t=='split2'){for(let k=0;k<2;k++){const d=(b.d+[1,3][(
 if(b.t=='osplit'){if(pushD(b,it,b.d))return true;for(let k=0;k<2;k++){const d=(b.d+[1,3][(b.rr+k)%2])%4;if(pushD(b,it,d)){b.rr=(b.rr+k+1)%2;return true}}return false}
 if(b.t=='splitter'){for(let k=0;k<3;k++){const d=(b.d+[0,1,3][(b.rr+k)%3])%4;if(pushD(b,it,d)){b.rr=(b.rr+k+1)%3;return true}}return false}
 if(b.t=='sorter')return pushD(b,it,b.flt&&it==b.flt?(b.d+3)%4:b.d);
+/* Trieur double : 1er filtre à gauche, 2e à droite, le reste tout droit */
+if(b.t=='sorter2')return pushD(b,it,b.flt&&it==b.flt?(b.d+3)%4:b.flt2&&it==b.flt2?(b.d+1)%4:b.d);
+if(b.t=='valve')return!b.off&&pushD(b,it,b.d);
+/* Limiteur : un objet au plus toutes les 120/débit étapes */
+if(b.t=='limiter'){if(tk_-(b.lt==null?-1e9:b.lt)<120/(b.lim||30))return false;if(pushD(b,it,b.d)){b.lt=tk_;return true}return false}
 /* Tunnel d'entrée : cherche un tunnel de sortie dans le même sens, 2 à 5 cases plus loin */
 if(b.t=='tunnel'&&!b.via)for(let k=2;k<=5;k++){const t=at([b.x+DX[b.d]*k,b.y+DY[b.d]*k]);if(t&&t.t=='tunnel'&&t.d==b.d){if(t.item)return false;t.item=it;t.st=tk_;t.via=1;t.from=[b.x,b.y];return true}}
 return pushD(b,it,b.d)}
-function okRes(b){const r=Rs(b.x,b.y),d=BD[b.t];if(!r)return false;if(d.oil)return r=='oil';if(r=='oil')return false;if((r=='titanium'||r=='uranium')&&b.t!='ext3')return false;if(r=='titanium'&&!U.x.has('titan')||r=='uranium'&&!U.x.has('uran'))return false;return r!='gold'||U.x.has('gold')}
+function okRes(b){const r=Rs(b.x,b.y),d=BD[b.t];if(d.sand)return Bi(b.x,b.y)==3&&(!r||r=='sand');if(!r)return false;if(d.oil)return r=='oil';if(r=='oil')return false;if((r=='titanium'||r=='uranium')&&b.t!='ext3')return false;if(r=='titanium'&&!U.x.has('titan')||r=='uranium'&&!U.x.has('uran'))return false;return r!='gold'||U.x.has('gold')}
 const BELTS=nz({conveyor:1,belt2:1,belt3:1,bridge:1}),isBelt=t=>!!BELTS[t],CARRY=nz({split2:1,splitter:1,osplit:1,sorter:1,tunnel:1}),
 /* Vitesse en cases par tick et écart minimal entre deux objets : 3 objets par case au maximum.
    Débit : tapis 120/min, tapis rapide 240/min. */
@@ -153,7 +159,7 @@ for(let j=-2;j<=2;j++)for(let i=-2;i<=2;i++){if(!i&&!j)continue;const t=BL.get(t
 const HIT=nz({arc:1,centrifuge:1,cleanroom:1});const pf=b=>(PWR[b.t]?GRID.r:1)*(HIT[b.t]?evM('hi'):1);
 function tick(){tk_++;SB[tk_%120]={};powerTick();
 for(const b of L){const d=BD[b.t];
-if(d.rt){if((b.cd-=pf(b)*(1+.1*(st.extb||0))*drillF(b))<=0){if(b.out.length<3&&okRes(b)&&RN[Rs(b.x,b.y)]){const it=RN[Rs(b.x,b.y)];b.out.push(it);sbA(it,'p',1);b.cd+=d.rt}else b.cd=0}}
+if(d.rt){if((b.cd-=pf(b)*(1+.1*(st.extb||0))*drillF(b))<=0){if(b.out.length<3&&okRes(b)&&(d.sand||RN[Rs(b.x,b.y)])){const it=d.sand?'oil':RN[Rs(b.x,b.y)];b.out.push(it);sbA(it,'p',1);b.cd+=d.rt}else b.cd=0}}
 else if(d.m){const r=R[b.rec];if(!r)continue;if(b.busy){b.pr-=LVS[b.lv-1]*(1+.25*beacons(b))*pf(b)*(nearT(b,'antenna',2)?1.3:1)*(INVP.clock?1.08:1);if(b.pr<=0){for(let i=0;i<r.n;i++)b.out.push(r.out);b.busy=0;st.made[r.out]=(st.made[r.out]||0)+r.n;sbA(r.out,'p',r.n)}}
 if(!b.busy&&b.out.length<=4-r.n){let ok=true;for(const k in r.in)if((b.buf[k]||0)<r.in[k]){ok=false;break}if(ok){for(const k in r.in){b.buf[k]-=r.in[k];sbA(k,'c',r.in[k])}b.busy=1;b.pr=r.t}}}}
 /* répartiteurs, trieurs, tunnels et croisements passent leur objet avant que les tapis bougent : débit plein, sans temps mort */
@@ -175,7 +181,8 @@ if(b.t=='wpump'){if(--b.cd<=0&&b.out.length<3){b.out.push('water');b.cd=2;sbA('w
 else if(b.t=='recycler'){if(b.busy){if(--b.pr<=0){b.busy=0;const r=REVR[b.cur];if(r){let n=0;for(const k in r.in){const c=Math.floor(r.in[k]*.5);for(let i=0;i<c&&b.out.length<10;i++){b.out.push(k);n++}}if(!n&&b.out.length<10)b.out.push(Object.keys(r.in)[0])}b.cur=null}}else if(b.rq&&b.rq.length&&b.out.length<6){b.cur=b.rq.shift();b.busy=1;b.pr=4}}
 else if(b.t=='dronest'&&b.mode!='recv'){if(b.fl){if(tk_-b.fl.t0>=b.fl.dur){const t=b.fl.to;if(L.includes(t)&&(t.out.length+b.fl.items.length)<=24){t.out.push(...b.fl.items);b.fl=null;SFX.tab&&0}else if(!L.includes(t)){b.dq.unshift(...b.fl.items);b.fl=null}}}
 else if(b.dq&&b.dq.length&&tk_%4==0){let best=null,bd=1e9;for(const o of L)if(o.t=='dronest'&&o!==b&&o.mode=='recv'){const d=Math.hypot(o.x-b.x,o.y-b.y);if(d<bd){bd=d;best=o}}if(best)b.fl={to:best,items:b.dq.splice(0,6),t0:tk_,dur:Math.max(4,Math.round(bd/5))}}}
-if(b.t=='well'){if(--b.cd<=0&&b.out.length<3){b.out.push('oil');b.cd=4;st.made.oil=(st.made.oil||0)+1}}else if(b.t=='vault'&&tk_%120==0){const g=Math.min(2000,Math.round(money*.004));if(g>0){money+=g;st.earned+=g;fl.push({x:b.x*TS+16,y:b.y*TS,t:time,s:'+'+g+' $'})}}}for(const b of L){const d=BD[b.t];if(!(d.m||d.rt))continue;const on=d.m?!!b.busy:status(b)=='g';b.ua=(b.ua==null?.5:b.ua)*.985+(on?.015:0);
+/* puits fossile : profite aussi de la foreuse ancienne et des balises */
+if(b.t=='well'){b.cd=(b.cd||0)-drillF(b)*(1+.25*beacons(b));if(b.cd<=0){if(b.out.length<3){b.out.push('oil');b.cd+=4;st.made.oil=(st.made.oil||0)+1}else b.cd=0}}else if(b.t=='vault'&&tk_%120==0){const g=Math.min(2000,Math.round(money*.004));if(g>0){money+=g;st.earned+=g;fl.push({x:b.x*TS+16,y:b.y*TS,t:time,s:'+'+g+' $'})}}}for(const b of L){const d=BD[b.t];if(!(d.m||d.rt))continue;const on=d.m?!!b.busy:status(b)=='g';b.ua=(b.ua==null?.5:b.ua)*.985+(on?.015:0);
 if(!on){const r=R[b.rec];b.why=d.m&&r?(b.out.length>=4?'out':Object.keys(r.in).find(k=>(b.buf[k]||0)<r.in[k])||(PWR[b.t]&&GRID.r<1?'pow':b.why)):b.out&&b.out.length>=3?'out':PWR[b.t]&&GRID.r<1?'pow':b.why}}if(tk_%10==0){INVP={};RELN=0;for(const b of L)if(BD[b.t].inv){INVP[b.t]=1;if(b.t=='relic')RELN++}}if(tk_%6==0)tipsTick();if(tk_%10==0)achTick();
 if(sheet=='i')updInsp();else if(sheet=='m'&&tk_%4==0){if(mtab=='p')renderSheet();else updMarket()}else if(sheet=='t'&&tk_%2==0)renderTD()}
 /* Commandes de vaisseaux */
@@ -190,7 +197,7 @@ c={item:it,n,got:0,t0:tk_,dur:200+n*6,reward:Math.round(base*n*2.5*(1+.05*(st.ar
    ACTIONS DU JOUEUR
    ===================================================================== */
 function place(x,y,t){const d=BD[t],ex=BL.get(tk(x,y));
-if(ex&&isBelt(ex.t)&&ex.t!='bridge'&&(t=='split2'||t=='splitter'||t=='osplit'||t=='sorter'||t=='crossing')&&U.b.has(t)&&money>=d.cost-BD[ex.t].cost){pushU({k:'e',x:ex.x,y:ex.y,c:BD[ex.t].cost,b:{t:ex.t,d:ex.d}});money+=BD[ex.t].cost;dir=ex.d;unregB(ex);L.splice(L.indexOf(ex),1);bDirty=1}
+if(ex&&isBelt(ex.t)&&ex.t!='bridge'&&(t=='split2'||t=='splitter'||t=='osplit'||t=='sorter'||t=='sorter2'||t=='valve'||t=='limiter'||t=='crossing')&&U.b.has(t)&&money>=d.cost-BD[ex.t].cost){pushU({k:'e',x:ex.x,y:ex.y,c:BD[ex.t].cost,b:{t:ex.t,d:ex.d}});money+=BD[ex.t].cost;dir=ex.d;unregB(ex);L.splice(L.indexOf(ex),1);bDirty=1}
 if(BL.has(tk(x,y)))return false;
 if(t=='wpump'&&!(isRiver(x,y)||[[1,0],[-1,0],[0,1],[0,-1]].some(([i,j])=>!Bi(x+i,y+j)))){toast('La pompe à eau se pose au bord de l’eau ou sur une rivière','bad');return false}
 if(SZ(t)>1){const n=SZ(t)+'×'+SZ(t);for(const c of tilesOf(t,x,y)){if(BL.has(tk(c[0],c[1]))||poiAt(c[0],c[1]))return toast('Il faut '+n+' cases libres','bad'),false;if(!owned(c[0],c[1]))return toast('Cette parcelle ne t’appartient pas encore','bad'),false;if(!Bi(c[0],c[1])&&!PLAT.has(tk(c[0],c[1])))return toast('Il faut '+n+' cases sur la terre ferme','bad'),false}}
@@ -202,7 +209,8 @@ if(!Bi(x,y)&&!PLAT.has(tk(x,y))&&t!='bridge'&&t!='dam'){toast(U.b.has('bridge')?
 if(poiAt(x,y)){toast('Fouille d’abord ce point d’intérêt','bad');return false}
 const rr=Rs(x,y);
 if(d.oil&&rr!='oil'){toast('La pompe se pose sur une nappe de pétrole','bad');return false}
-if(d.rt&&!d.oil&&(!rr||rr=='oil')){toast(rr=='oil'?'Il faut une pompe pour le pétrole':'Un extracteur se pose sur un gisement','bad');return false}
+if(d.sand&&!(Bi(x,y)==3&&(!rr||rr=='sand'))){toast('Cette foreuse se pose sur du sable','bad');return false}
+if(d.rt&&!d.oil&&!d.sand&&(!rr||rr=='oil')){toast(rr=='oil'?'Il faut une pompe pour le pétrole':'Un extracteur se pose sur un gisement','bad');return false}
 if(d.rt&&rr=='gold'&&!U.x.has('gold')){toast('Recherche « Orfèvrerie » requise pour l’or','bad');return false}
 if(d.rt&&(rr=='titanium'||rr=='uranium')&&t!='ext3'){toast('Il faut un Extracteur Mk3 pour ce minerai','bad');return false}
 if(t=='seller'&&L.filter(q=>q.t=='seller').length>=2){toast('2 terminaux de vente maximum : livre les vaisseaux ou utilise le broyeur','bad');return false}
@@ -210,7 +218,7 @@ if(d.inv&&!(INV[t]>0)){toast('Tu n’en as plus en stock : fouille des épaves e
 const freeB=!d.inv&&(st.free||0)>0&&(d.m||d.rt||GEN[t]);if(!freeB&&money<d.cost){toast('Pas assez d’argent','bad');return false}
 if(freeB){st.free--;if(!st.free)toast('Kit de construction épuisé')}else money-=d.cost;const b=mk(t,x,y,dir);
 if(d.m){const mr=cfg&&cfg.t==t?cfg.rec:cfgMem[t];b.rec=R[mr]&&R[mr].m==d.m?mr:null}if(t=='sorter')b.flt=cfg&&cfg.t==t?cfg.flt:cfgMem.sorterF||null;
-if(!['wind','dam','solarp','conveyor','belt2','belt3','bridge','split2','splitter','osplit','sorter','tunnel','crossing','seller','pad','sink','beacon'].includes(t)&&!at(fr(b))){const k=[0,1,2,3].find(q=>{const n=at([x+DX[q],y+DY[q]]);if(!n||n.t!='conveyor')return false;const f=fr(n);return!(f[0]==x&&f[1]==y)});if(k!==undefined)b.d=k}
+if(!['wind','dam','solarp','conveyor','belt2','belt3','bridge','split2','splitter','osplit','sorter','sorter2','valve','limiter','tunnel','crossing','seller','pad','sink','beacon'].includes(t)&&!at(fr(b))){const k=[0,1,2,3].find(q=>{const n=at([x+DX[q],y+DY[q]]);if(!n||n.t!='conveyor')return false;const f=fr(n);return!(f[0]==x&&f[1]==y)});if(k!==undefined)b.d=k}
 regB(b);L.push(b);b.born=time;bDirty=1;if(t=='greenhouse'&&!b.rec)b.rec='fiberg';if(t=='dronest')b.mode=cfg&&cfg.mode||'send';if(d.m||d.rt)rivet('Chaque machine a une sortie : la petite flèche orange. Pour changer son sens, touche la machine puis « Tourner », ou tourne avant de poser avec le bouton ↻.','rot');pushU({k:'p',x,y,c:freeB?0:d.cost});if(recent[0]!=t)recent=[t,...recent.filter(q=>q!=t)].slice(0,6);vib(t=='conveyor'?4:10);
 if(isBelt(t))SFX.belt();else{SFX.place();burst(x,y,'#c9ced6',8)}
 if(d.m&&!b.rec&&!P){autoInsp=true;openInsp(b)}return true}

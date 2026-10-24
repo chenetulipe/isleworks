@@ -62,5 +62,5 @@ const OWN=new OwnSet(),FOUND=new Set(),PLAT=new Set();
 const owned=(x,y)=>OWN.has(pk(x>>3,y>>3));
 function pstate(px,py){if(OWN.has(pk(px,py)))return 2;if(!chunk(px,py).land&&!(typeof U!='undefined'&&U.x.has('water')))return 0;return OWN.has(pk(px+1,py))||OWN.has(pk(px-1,py))||OWN.has(pk(px,py+1))||OWN.has(pk(px,py-1))?1:0}
 function poiAt(x,y){const c=chunk(x>>3,y>>3);return c.poi&&c.poi.x==x&&c.poi.y==y&&!FOUND.has(tk(x,y))?c.poi:null}
-const pPrice=(px,py)=>{const d=px==null?1:Math.max(Math.abs(px+.5),Math.abs(py+.5))-.5;/* progression adoucie (×1,13 par parcelle au lieu de ×1,22) : chercher une ressource rare reste abordable */return Math.round(90*Math.pow(1.13,Math.max(0,OWN.size-4))*(1+.12*d)*DIF[diff].p/10)*10};
+const pPrice=(px,py)=>{const d=px==null?1:Math.max(Math.abs(px+.5),Math.abs(py+.5))-.5;/* progression adoucie (×1,13 par parcelle au lieu de ×1,22) : chercher une ressource rare reste abordable */return Math.round(90*Math.pow(1.09,Math.max(0,OWN.size-4))*(1+.08*d)*DIF[diff].p/10)*10};
 function newWorld(){SEED=(Math.random()*1e9)|0;WV=2;if(typeof ZK!='undefined')for(const k in ZK)delete ZK[k];CHK.clear();DEP.clear();OWN.clear();FOUND.clear();PLAT.clear();for(const[a,b]of[[-1,-1],[0,-1],[-1,0],[0,0]])OWN.add(pk(a,b))}
