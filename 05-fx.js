@@ -43,6 +43,10 @@ art:()=>{for(let i=0;i<10;i++)bell(nt(10+i),.5,.022,i*.045,.6);O(nt(5),1.6,{v:.0
 ship:()=>{N(1.6,{f:200,fs:900,q:.6,v:.045,a:.5});O(180,1.4,{t:'sawtooth',v:.011,lp:500,s:120,a:.3});O(nt(17),.12,{t:'square',v:.018,w:1.3,lp:3000});O(nt(19),.12,{t:'square',v:.018,w:1.45,lp:3000})},
 shipOk:()=>{[0,4,7,12].forEach((k,i)=>bell(nt(14+k),.5,.042,i*.08,.5));N(1.2,{f:900,fs:200,q:.6,v:.035,a:.1,w:.3})},
 shipKo:()=>{O(nt(9),.35,{t:'triangle',v:.045});O(nt(6),.6,{t:'triangle',v:.045,w:.25});N(1,{f:600,fs:150,q:.6,v:.025,w:.2})},
+/* nouveaux sons : montée de niveau (une note de plus par niveau), vanne, fonderie à plasma */
+lvl:n=>{n=n||2;for(let i=0;i<n;i++)bell(nt(10+i*2),.45,.034,i*.07,.4);O(nt(10+n*2)/2,.7,{t:'triangle',v:.02,w:n*.07,r:.4});N(.25,{f:5000,fs:9000,v:.01,w:n*.07})},
+valve:on=>{O(on?520:300,.06,{t:'square',v:.018,lp:1800});O(on?780:220,.08,{t:'square',v:.014,w:.07,lp:1800});N(.05,{f:2500,v:.012})},
+plasma:()=>{O(70,.5,{t:'sawtooth',v:.02,lp:600,s:140});O(1400,.25,{t:'sine',v:.012,s:2200,w:.05});N(.3,{f:3000,fs:8000,v:.012})},
 up:()=>{bell(nt(12),.3,.04,0);bell(nt(19),.4,.04,.08);O(300,.35,{t:'sawtooth',v:.014,lp:2000,s:900})},
 copy:()=>{O(nt(17),.05,{t:'square',v:.016,lp:3000});O(nt(19),.06,{t:'square',v:.016,lp:3000,w:.06})},
 pause:()=>O(400,.35,{t:'sawtooth',v:.02,lp:1200,s:60}),play:()=>O(80,.3,{t:'sawtooth',v:.02,lp:1200,s:400}),

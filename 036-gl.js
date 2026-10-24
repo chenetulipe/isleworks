@@ -66,7 +66,7 @@ const GLR=(()=>{
   function gcTex(){for(const[k,e]of TX)if(frameN-e.f>180){gl.deleteTexture(e.t);TX.delete(k)}}
   const isAtlas=t=>{for(const pg of AT)if(pg.t===t)return true;return false};
 
-  function flush(){if(!nq)return;gl.bufferSubData(gl.ARRAY_BUFFER,0,vb.subarray(0,nq*4*FL));gl.drawElements(gl.TRIANGLES,nq*6,gl.UNSIGNED_SHORT,0);nq=0}
+  function flush(){if(!nq)return;G.stats.lots++;gl.bufferSubData(gl.ARRAY_BUFFER,0,vb.subarray(0,nq*4*FL));gl.drawElements(gl.TRIANGLES,nq*6,gl.UNSIGNED_SHORT,0);nq=0}
   function use(t,add){if(t!==curTex||add!==curAdd||nq>=MAXQ){flush();if(t!==curTex){gl.bindTexture(gl.TEXTURE_2D,t);curTex=t}if(add!==curAdd){curAdd=add;add?gl.blendFunc(gl.ONE,gl.ONE):gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA)}}}
   function quad(m,x,y,w,h,u0,v0,u1,v1,r,g,b,a){let o=nq*4*FL;nq++;const A=m[0],B=m[1],C=m[2],D_=m[3],E=m[4],F=m[5],x1=x+w,y1=y+h;
     vb[o]=A*x+C*y+E;vb[o+1]=B*x+D_*y+F;vb[o+2]=u0;vb[o+3]=v0;vb[o+4]=r;vb[o+5]=g;vb[o+6]=b;vb[o+7]=a;o+=8;
@@ -85,7 +85,10 @@ const GLR=(()=>{
   /* ---------- le contexte « compatible » qui remplace cx ---------- */
   const OX=cx;let M=[1,0,0,1,0,0];const ST=[];
   let alpha=1,comp='source-over',fs='#000',rects=null,used=true;
-  const G={canvas:cv,isGL:true};
+  const G={canvas:cv,isGL:true,stats:{lots:0,ox:0},gpu:''};
+  try{const di=gl.getExtension('WEBGL_debug_renderer_info');G.gpu=String(di?gl.getParameter(di.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER)).slice(0,60)}catch(e){}
+  /* opérations de dessin coûteuses sur le calque 2D (comptées ; ignorées pendant la phase « sans calque 2D » du diagnostic) */
+  const OXD=new Set(['fill','stroke','fillText','strokeText','strokeRect','drawFocusIfNeeded']);
   const mul=(a,b)=>[a[0]*b[0]+a[2]*b[1],a[1]*b[0]+a[3]*b[1],a[0]*b[2]+a[2]*b[3],a[1]*b[2]+a[3]*b[3],a[0]*b[4]+a[2]*b[5]+a[4],a[1]*b[4]+a[3]*b[5]+a[5]];
   G.setTransform=function(a,b,c,d,e,f){if(a&&typeof a=='object'){M=[a.a,a.b,a.c,a.d,a.e,a.f]}else if(a===undefined)M=[1,0,0,1,0,0];else M=[a,b,c,d,e,f];OX.setTransform(...M)};
   G.resetTransform=function(){M=[1,0,0,1,0,0];OX.setTransform(1,0,0,1,0,0)};
@@ -105,17 +108,17 @@ const GLR=(()=>{
     const t=texOf(img);use(t,comp=='lighter');quad(M,dx,dy,dw,dh,sx/w,sy/hh,(sx+sw)/w,(sy+sh)/hh,k,k,k,k)};
   /* couleur unie : on reste sur la planche déjà active si possible (même lot que les images) */
   const solidTex=add=>{const t=curTex&&isAtlas(curTex)?curTex:AT[0].t;use(t,add);return t};
-  G.fillRect=function(x,y,w,h){const c=col(fs);if(!c){used=true;OX.fillRect(x,y,w,h);return}const a=c[3]*alpha;if(a<=0)return;solidTex(comp=='lighter');quad(M,x,y,w,h,WU,WU,WU,WU,c[0]*a,c[1]*a,c[2]*a,a)};
+  G.fillRect=function(x,y,w,h){const c=col(fs);if(!c){used=true;G.stats.ox++;OX.fillRect(x,y,w,h);return}const a=c[3]*alpha;if(a<=0)return;solidTex(comp=='lighter');quad(M,x,y,w,h,WU,WU,WU,WU,c[0]*a,c[1]*a,c[2]*a,a)};
   G.clearRect=function(x,y,w,h){used=true;OX.clearRect(x,y,w,h)};
   /* chemins faits uniquement de rectangles (lots d'objets, vue plan, voyants) : dessinés en WebGL */
   G.beginPath=function(){rects=[];OX.beginPath()};
   G.rect=function(x,y,w,h){if(rects)rects.push([M,x,y,w,h]);OX.rect(x,y,w,h)};
   for(const k of['moveTo','lineTo','arc','arcTo','ellipse','quadraticCurveTo','bezierCurveTo','closePath','roundRect'])G[k]=function(...a){rects=null;return OX[k](...a)};
-  G.fill=function(...a){const c=col(fs);if(rects&&rects.length&&c&&!a.length){const al=c[3]*alpha;if(al>0){solidTex(comp=='lighter');for(const r of rects)quad(r[0],r[1],r[2],r[3],r[4],WU,WU,WU,WU,c[0]*al,c[1]*al,c[2]*al,al)}return}used=true;OX.fill(...a)};
+  G.fill=function(...a){const c=col(fs);if(rects&&rects.length&&c&&!a.length){const al=c[3]*alpha;if(al>0){solidTex(comp=='lighter');for(const r of rects)quad(r[0],r[1],r[2],r[3],r[4],WU,WU,WU,WU,c[0]*al,c[1]*al,c[2]*al,al)}return}used=true;G.stats.ox++;if(typeof PFX!='undefined'&&PFX.noox)return;OX.fill(...a)};
   /* tout le reste (traits, textes, dégradés…) : calque Canvas 2D du dessus, avec le même état */
   const proto=CanvasRenderingContext2D.prototype;
   for(const k of Object.getOwnPropertyNames(proto)){if(k in G||k=='constructor')continue;const d=Object.getOwnPropertyDescriptor(proto,k);
-    if(typeof d.value=='function')G[k]=function(...a){used=true;return OX[k](...a)};
+    if(typeof d.value=='function')G[k]=OXD.has(k)?function(...a){used=true;G.stats.ox++;if(typeof PFX!='undefined'&&PFX.noox)return;return OX[k](...a)}:function(...a){used=true;return OX[k](...a)};
     else if(d.get)Object.defineProperty(G,k,{get:()=>OX[k],set:v=>{OX[k]=v}})}
 
   G.beginFrame=function(){frameN++;if(used){OX.setTransform(1,0,0,1,0,0);OX.clearRect(0,0,cv.width,cv.height);used=false}

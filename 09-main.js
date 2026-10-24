@@ -86,7 +86,9 @@ function drawRain(){if(!rain||!OPT.fx)return;const w=innerWidth,h=innerHeight;cx
 const t=time/1000;for(let i=0;i<70;i++){const x=(hsh(i,1,9)*w+t*60)%w,y=(hsh(i,2,9)*h+t*(500+hsh(i,3,9)*300))%h;cx.moveTo(x,y);cx.lineTo(x-3,y+12)}cx.stroke()}
 $('optb').onclick=()=>{tool=null;dis=false;openSheet('opt')};
 $('hb').onclick=()=>{goHome=true;SFX.tab();vib(8)};
-let lastDraw=0;function frame(t){resize.ok=true;const dt=Math.min(100,t-lt);lt=t;time=t;if(!menu&&!paused&&!document.hidden)st.play=(st.play||0)+dt/1000;
+let lastDraw=0;/* numéro de version de l’accueil : lu automatiquement dans les fichiers chargés */
+{const v=((document.querySelector('script[src*="09-main"]')||{}).src||'').match(/v=([\d.]+)/);const e=document.getElementById('verl');if(e&&v)e.textContent='v'+v[1]}
+function frame(t){resize.ok=true;const dt=Math.min(100,t-lt);lt=t;time=t;if(!menu&&!paused&&!document.hidden)st.play=(st.play||0)+dt/1000;
 /* Qualité adaptative par paliers : d'abord les effets, puis la résolution (jamais d'un coup) */
 if((OPT.qm||'auto')=='auto')rsStep(t,dt);else qStep(t,dt);
 if(menu){cam.x=Math.cos(t/9000)*260;cam.y=Math.sin(t/7000)*200;cam.z=.8}
